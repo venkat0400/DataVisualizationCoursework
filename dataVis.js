@@ -92,7 +92,30 @@ function initVis(_data){
            })
             console.log(objArr);
             console.log(dimensionArr);
-    });
+
+            const container = d3.select("#dataTable")
+                .append("div").attr("class", "container");
+
+            const table=container.append("table").attr("class", "dataTableClass");
+            const thead = table.append("thead").attr("class", "tableHeaderClass");
+            const headerRow = thead.append("tr");
+
+            dimensionArr.forEach(key => {
+                headerRow.append("th").text(key);
+            });
+            const tbody = table.append("tbody").attr("class", "tableBodyClass");
+            objArr.forEach(item => {
+                const row = tbody.append("tr");
+               dimensionArr.forEach((key,index) => {
+                   const cell = row.append("td").text(item[key]);
+                   if (index === 0) {
+                       cell.attr("class", "tablink:hover");
+                   }
+                });
+            });
+        });
+
+
 
     // y scalings for scatterplot
     // TODO: set y domain for each dimension
