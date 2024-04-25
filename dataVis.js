@@ -108,9 +108,6 @@ function initVis(_data){
                 const row = tbody.append("tr").attr("class","tableBodyClass");
                dimensionArr.forEach((key,index) => {
                    const cell = row.append("td").attr("class","tableBodyClass").text(item[key]);
-                   if (index === 0) {
-                       cell.attr("class", "tablink:hover");
-                   }
                 });
             });
         });

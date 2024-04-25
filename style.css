@@ -57,11 +57,16 @@ body {
     text-transform: uppercase;
 }
 
+
 .tableBodyClass {
     border: 1px solid black;
     padding: 5px;
 }
+.tableBodyClass:hover{
+    background-color: cornflowerblue;
+    cursor: pointer;
 
+}
 svg {
     font: 10px sans-serif;
 }
