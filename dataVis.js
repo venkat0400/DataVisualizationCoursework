@@ -10,6 +10,7 @@
 */
 
 // scatterplot axes
+
 let xAxis, yAxis, xAxisLabel, yAxisLabel;
 // radar chart axes
 let radarAxes, radarAxesAngle;
@@ -64,10 +65,10 @@ function init() {
         let reader = new FileReader();
         reader.onloadend = function () {
             console.log("data loaded: ");
-            console.log(reader.result);
+            //console.log(reader.result);
 
             // TODO: parse reader.result data and call the init functions with the parsed data!
-            initVis(null);
+            initVis(fileInput.files[0]);
             CreateDataTable(null);
             // TODO: possible place to call the dashboard file for Part 2
             initDashboard(null);
@@ -81,6 +82,18 @@ function init() {
 function initVis(_data){
 
     // TODO: parse dimensions (i.e., attributes) from input file
+
+        let objArr = []
+        d3.csv(_data.name).then( function(data){
+           data.forEach(d => {
+               objArr.push(d)
+           })
+            console.log(objArr);
+    });
+
+
+
+
 
 
     // y scalings for scatterplot
