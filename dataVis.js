@@ -105,9 +105,9 @@ function initVis(_data){
             });
             const tbody = table.append("tbody");
             objArr.forEach(item => {
-                const row = tbody.append("tr").attr("class","tableBodyClass");
-               dimensionArr.forEach((key,index) => {
-                   const cell = row.append("td").attr("class","tableBodyClass").text(item[key]);
+                const row = tbody.append("tr");
+               dimensionArr.forEach(key => {
+                   row.append("td").attr("class","tableBodyClass").text(item[key]);
                 });
             });
         });
