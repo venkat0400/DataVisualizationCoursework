@@ -97,17 +97,17 @@ function initVis(_data){
                 .append("div").attr("class", "container");
 
             const table=container.append("table").attr("class", "dataTableClass");
-            const thead = table.append("thead").attr("class", "tableHeaderClass");
+            const thead = table.append("thead")
             const headerRow = thead.append("tr");
 
             dimensionArr.forEach(key => {
-                headerRow.append("th").text(key);
+                headerRow.append("th").attr("class","tableHeaderClass").text(key);
             });
-            const tbody = table.append("tbody").attr("class", "tableBodyClass");
+            const tbody = table.append("tbody");
             objArr.forEach(item => {
-                const row = tbody.append("tr");
+                const row = tbody.append("tr").attr("class","tableBodyClass");
                dimensionArr.forEach((key,index) => {
-                   const cell = row.append("td").text(item[key]);
+                   const cell = row.append("td").attr("class","tableBodyClass").text(item[key]);
                    if (index === 0) {
                        cell.attr("class", "tablink:hover");
                    }
