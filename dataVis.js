@@ -84,15 +84,33 @@ function initVis(_data){
     // TODO: parse dimensions (i.e., attributes) from input file
 
         let objArr = []
+        let dimensionArr=[]
         d3.csv(_data.name).then( function(data){
+            dimensionArr=Object.keys(data[0])
            data.forEach(d => {
                objArr.push(d)
            })
             console.log(objArr);
-    });
+            console.log(dimensionArr);
 
+            const container = d3.select("#dataTable")
+                .append("div").attr("class", "container");
 
+            const table=container.append("table").attr("class", "dataTableClass");
+            const thead = table.append("thead")
+            const headerRow = thead.append("tr");
 
+            dimensionArr.forEach(key => {
+                headerRow.append("th").attr("class","tableHeaderClass").text(key);
+            });
+            const tbody = table.append("tbody");
+            objArr.forEach(item => {
+                const row = tbody.append("tr");
+               dimensionArr.forEach(key => {
+                   row.append("td").attr("class","tableBodyClass").text(item[key]);
+                });
+            });
+        });
 
 
 
