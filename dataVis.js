@@ -87,9 +87,6 @@ function initVis(_data){
         let dimensionArr=[]
         d3.csv(_data.name).then( function(data){
             
-            dimensions = Object.keys(data[0]);
-            console.log("Global dimensions: ", dimensions);
-            
             dimensionArr=Object.keys(data[0])
            data.forEach(d => {
                objArr.push(d)
@@ -99,7 +96,7 @@ function initVis(_data){
             
             // init menu for the visual channels: Due to asynchronous execution, had to move this into the d3.csv loading process
             channels.forEach(function(c){
-                initMenu(c, dimensions);
+                initMenu(c, dimensionArr);
             });
 
             // refresh all select menus
