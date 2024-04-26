@@ -15,7 +15,7 @@ let xAxis, yAxis, xAxisLabel, yAxisLabel;
 // radar chart axes
 let radarAxes, radarAxesAngle;
 
-let dimensions = ["dimension 1", "dimension 2", "dimension 3", "dimension 4", "dimension 5", "dimension 6"];
+let dimensions = [];
 //*HINT: the first dimension is often a label; you can simply remove the first dimension with
 // dimensions.splice(0, 1);
 
@@ -86,12 +86,27 @@ function initVis(_data){
         let objArr = []
         let dimensionArr=[]
         d3.csv(_data.name).then( function(data){
+            
+            dimensions = Object.keys(data[0]);
+            console.log("Global dimensions: ", dimensions);
+            
             dimensionArr=Object.keys(data[0])
            data.forEach(d => {
                objArr.push(d)
            })
             console.log(objArr);
             console.log(dimensionArr);
+            
+            // init menu for the visual channels: Due to asynchronous execution, had to move this into the d3.csv loading process
+            channels.forEach(function(c){
+                initMenu(c, dimensions);
+            });
+
+            // refresh all select menus
+            channels.forEach(function(c){
+                refreshMenu(c);
+            });
+
 
             const container = d3.select("#dataTable")
                 .append("div").attr("class", "container");
@@ -111,8 +126,6 @@ function initVis(_data){
                 });
             });
         });
-
-
 
     // y scalings for scatterplot
     // TODO: set y domain for each dimension
@@ -186,16 +199,7 @@ function initVis(_data){
         .attr("y", function(d, i){ return radarY(axisRadius(textRadius), i); })
         .text("dimension");
 
-    // init menu for the visual channels
-    channels.forEach(function(c){
-        initMenu(c, dimensions);
-    });
-
-    // refresh all select menus
-    channels.forEach(function(c){
-        refreshMenu(c);
-    });
-
+    
     renderScatterplot();
     renderRadarChart();
 }
@@ -222,9 +226,11 @@ function renderScatterplot(){
     // TODO: get domain names from menu and label x- and y-axis
 
     // TODO: re-render axes
-
+    
     // TODO: render dots
+
 }
+
 
 function renderRadarChart(){
 
@@ -248,18 +254,33 @@ function radarAngle(index){
 
 // init scatterplot select menu
 function initMenu(id, entries) {
-    $("select#" + id).empty();
+    console.log("Initializing menu for:", id, "with entries:", entries);
 
-    entries.forEach(function (d) {
-        $("select#" + id).append("<option>" + d + "</option>");
+    var select = $("#" + id); // jQuery selector for the select element
+    select.empty(); // Clear previous options
+
+    entries.forEach(function(entry) {
+        select.append(new Option(entry, entry));
     });
 
-    $("#" + id).selectmenu({
-        select: function () {
-            renderScatterplot();
-        }
-    });
+    if ($.isEmptyObject(select.data("ui-selectmenu"))) {
+        // Initialize selectmenu if it hasn't been initialized
+        select.selectmenu({
+            create: function(event, ui) {
+                console.log("Selectmenu created for:", id);
+            },
+            select: function(event, ui) {
+                console.log("Option selected on:", id, "with value:", ui.item.value);
+                renderScatterplot(); // Assuming you need to re-render the scatterplot
+            }
+        });
+    } else {
+        // Refresh the selectmenu if it has been initialized
+        select.selectmenu("refresh");
+        console.log("Selectmenu refreshed for:", id);
+    }
 }
+
 
 // refresh menu after reloading data
 function refreshMenu(id){
