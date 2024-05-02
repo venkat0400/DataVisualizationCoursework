@@ -28,7 +28,8 @@ let margin, width, height, radius;
 let scatter, radar, dataTable;
 
 // Add additional variables
-
+let objArr = []
+let dimensionArr=[]
 
 function init() {
     // define size of plots
@@ -83,8 +84,6 @@ function initVis(_data){
 
     // TODO: parse dimensions (i.e., attributes) from input file
 
-        let objArr = []
-        let dimensionArr=[]
         d3.csv(_data.name).then( function(data){
             
             dimensionArr=Object.keys(data[0])
@@ -103,8 +102,6 @@ function initVis(_data){
             channels.forEach(function(c){
                 refreshMenu(c);
             });
-
-
             const container = d3.select("#dataTable")
                 .append("div").attr("class", "container");
 
@@ -122,6 +119,8 @@ function initVis(_data){
                    row.append("td").attr("class","tableBodyClass").text(item[key]);
                 });
             });
+
+
         });
 
     // y scalings for scatterplot
@@ -221,8 +220,24 @@ function CreateDataTable(_data) {
 function renderScatterplot(){
 
     // TODO: get domain names from menu and label x- and y-axis
+    const x_attribute = readMenu('scatterX');
+    const y_attribute = readMenu('scatterY');
+    
+    let x = d3.scaleLinear()
+        .domain(d3.extent(objArr, d => d[x_attribute]))
+        .range([margin.left, width - margin.left - margin.right]);
+
+    let y = d3.scaleLinear()
+        .domain(d3.extent(objArr, d => d[y_attribute]))
+        .range([height - margin.bottom - margin.top, margin.top]);
 
     // TODO: re-render axes
+    // Update axes with new scales
+    yAxis.call(d3.axisLeft(y));
+    yAxisLabel.text(y_attribute);  // Update y-axis label
+
+    xAxis.call(d3.axisBottom(x));
+    xAxisLabel.text(x_attribute);
     
     // TODO: render dots
 
@@ -253,7 +268,7 @@ function radarAngle(index){
 function initMenu(id, entries) {
     console.log("Initializing menu for:", id, "with entries:", entries);
 
-    var select = $("#" + id); // jQuery selector for the select element
+    let select = $("#" + id); // jQuery selector for the select element
     select.empty(); // Clear previous options
 
     entries.forEach(function(entry) {
@@ -261,18 +276,18 @@ function initMenu(id, entries) {
     });
 
     if ($.isEmptyObject(select.data("ui-selectmenu"))) {
-        // Initialize selectmenu if it hasn't been initialized
+        // Initialize selectmenu
         select.selectmenu({
             create: function(event, ui) {
                 console.log("Selectmenu created for:", id);
             },
             select: function(event, ui) {
                 console.log("Option selected on:", id, "with value:", ui.item.value);
-                renderScatterplot(); // Assuming you need to re-render the scatterplot
+                renderScatterplot();
             }
         });
     } else {
-        // Refresh the selectmenu if it has been initialized
+        // Refresh the selectmenu
         select.selectmenu("refresh");
         console.log("Selectmenu refreshed for:", id);
     }
@@ -291,7 +306,7 @@ function readMenu(id){
 
 // switches and displays the tabs
 function openPage(pageName,elmnt,color) {
-    var i, tabcontent, tablinks;
+    let i, tabcontent, tablinks;
     tabcontent = document.getElementsByClassName("tabcontent");
     for (i = 0; i < tabcontent.length; i++) {
         tabcontent[i].style.display = "none";
