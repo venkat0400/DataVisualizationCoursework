@@ -15,7 +15,7 @@ let xAxis, yAxis, xAxisLabel, yAxisLabel;
 // radar chart axes
 let radarAxes, radarAxesAngle;
 
-let dimensions = ["dimension 1", "dimension 2", "dimension 3", "dimension 4", "dimension 5", "dimension 6"];
+let dimensions = [];
 //*HINT: the first dimension is often a label; you can simply remove the first dimension with
 // dimensions.splice(0, 1);
 
@@ -28,14 +28,17 @@ let margin, width, height, radius;
 let scatter, radar, dataTable;
 
 // Add additional variables
-
+let objArr = []
+let dimensionArr=[]
 
 function init() {
     // define size of plots
     margin = {top: 20, right: 20, bottom: 20, left: 50};
     width = 600;
     height = 500;
-    radius = width / 2;
+    //Rescaled the radius to have the chart fit
+    radius = Math.min(width, height) / 2 - Math.max(margin.top, margin.right, margin.bottom, margin.left);
+
 
     // Start at default tab
     document.getElementById("defaultOpen").click();
@@ -83,16 +86,24 @@ function initVis(_data){
 
     // TODO: parse dimensions (i.e., attributes) from input file
 
-        let objArr = []
-        let dimensionArr=[]
         d3.csv(_data.name).then( function(data){
+            
             dimensionArr=Object.keys(data[0])
            data.forEach(d => {
                objArr.push(d)
            })
             console.log(objArr);
             console.log(dimensionArr);
+            
+            // init menu for the visual channels: Due to asynchronous execution, had to move this into the d3.csv loading process
+            channels.forEach(function(c){
+                initMenu(c, dimensionArr);
+            });
 
+            // refresh all select menus
+            channels.forEach(function(c){
+                refreshMenu(c);
+            });
             const container = d3.select("#dataTable")
                 .append("div").attr("class", "container");
 
@@ -110,9 +121,9 @@ function initVis(_data){
                    row.append("td").attr("class","tableBodyClass").text(item[key]);
                 });
             });
+            // Moved radarChart function to have access to dimensions
+            renderRadarChart(dimensionArr);
         });
-
-
 
     // y scalings for scatterplot
     // TODO: set y domain for each dimension
@@ -125,9 +136,9 @@ function initVis(_data){
         .range([margin.left, width - margin.left - margin.right]);
 
     // radius scalings for radar chart
-    // TODO: set radius domain for each dimension
+    /*// TODO: set radius domain for each dimension
     let r = d3.scaleLinear()
-        .range([0, radius]);
+        .range([0, radius]);*/
 
     // scatterplot axes
     yAxis = scatter.append("g")
@@ -149,55 +160,8 @@ function initVis(_data){
         .style("text-anchor", "middle")
         .attr("x", width - margin.right)
         .text("y");
-
-    // radar chart axes
-    radarAxesAngle = Math.PI * 2 / dimensions.length;
-    let axisRadius = d3.scaleLinear()
-        .range([0, radius]);
-    let maxAxisRadius = 0.75,
-        textRadius = 0.8;
-    gridRadius = 0.1;
-
-    // radar axes
-    radarAxes = radar.selectAll(".axis")
-        .data(dimensions)
-        .enter()
-        .append("g")
-        .attr("class", "axis");
-
-    radarAxes.append("line")
-        .attr("x1", 0)
-        .attr("y1", 0)
-        .attr("x2", function(d, i){ return radarX(axisRadius(maxAxisRadius), i); })
-        .attr("y2", function(d, i){ return radarY(axisRadius(maxAxisRadius), i); })
-        .attr("class", "line")
-        .style("stroke", "black");
-
-    // TODO: render grid lines in gray
-
-    // TODO: render correct axes labels
-    radar.selectAll(".axisLabel")
-        .data(dimensions)
-        .enter()
-        .append("text")
-        .attr("text-anchor", "middle")
-        .attr("dy", "0.35em")
-        .attr("x", function(d, i){ return radarX(axisRadius(textRadius), i); })
-        .attr("y", function(d, i){ return radarY(axisRadius(textRadius), i); })
-        .text("dimension");
-
-    // init menu for the visual channels
-    channels.forEach(function(c){
-        initMenu(c, dimensions);
-    });
-
-    // refresh all select menus
-    channels.forEach(function(c){
-        refreshMenu(c);
-    });
-
+    
     renderScatterplot();
-    renderRadarChart();
 }
 
 // clear visualizations before loading a new file
@@ -220,17 +184,84 @@ function CreateDataTable(_data) {
 function renderScatterplot(){
 
     // TODO: get domain names from menu and label x- and y-axis
+    const x_attribute = readMenu('scatterX');
+    const y_attribute = readMenu('scatterY');
+    
+    let x = d3.scaleLinear()
+        .domain(d3.extent(objArr, d => d[x_attribute]))
+        .range([margin.left, width - margin.left - margin.right]);
+
+    let y = d3.scaleLinear()
+        .domain(d3.extent(objArr, d => d[y_attribute]))
+        .range([height - margin.bottom - margin.top, margin.top]);
 
     // TODO: re-render axes
+    // Update axes with new scales
+    yAxis.call(d3.axisLeft(y));
+    yAxisLabel.text(y_attribute);  // Update y-axis label
 
+    xAxis.call(d3.axisBottom(x));
+    xAxisLabel.text(x_attribute);
+    
     // TODO: render dots
+
 }
 
-function renderRadarChart(){
 
-    // TODO: show selected items in legend
+function renderRadarChart(attributes){
+    // radar chart axes
+    radarAxesAngle = Math.PI * 2 / attributes.length;
+    let levels = 5;
+    let label_radius = radius * 1.2; // Extends the radius for better label placement
 
-    // TODO: render polylines in a unique color
+    // Draw axes
+    radar.selectAll(".axis")
+        .data(attributes)
+        .enter()
+        .append("line")
+        .attr("class", "axis")
+        .attr("x1", 0)
+        .attr("y1", 0)
+        .attr("x2", (d, i) => radarX(radius, i))
+        .attr("y2", (d, i) => radarY(radius, i))
+        .style("stroke", "black")
+        .style("stroke-width", 1.5);
+
+    // TODO: render grid lines in gray
+    // Construct radial grid lines
+    for(let j = 0; j < levels; j++){
+
+        let level_factor = radius / levels * (j + 1);
+
+        radar.selectAll(".gridLines")
+            .data(attributes)
+            .enter()
+            .append("line")
+            .attr("x1", (d, i) => radarX(level_factor, i))
+            .attr("y1", (d, i) => radarY(level_factor, i))
+            .attr("x2", (d, i) => radarX(level_factor, (i + 1) % attributes.length))
+            .attr("y2", (d, i) => radarY(level_factor, (i + 1) % attributes.length))
+            .style("stroke", "grey")
+            .style("stroke-opacity", 0.75)
+            .style("stroke-width", "1px")
+            .style("stroke-dasharray", "2, 2");
+    }
+
+    
+    // TODO: render correct axes labels
+    radar.selectAll(".axisLabel")
+        .data(attributes)
+        .enter()
+        .append('text')
+        .attr('class', 'axisLabel')
+        .attr("x", (d, i) => radarX(label_radius, i))
+        .attr("y", (d, i) => radarY(label_radius, i))
+        .text(d => d)
+        .style("font-size", "12px")
+        .attr("text-anchor", "middle")
+        .attr("alignment-baseline", "middle")
+        .style("user-select", "none");
+    
 }
 
 
@@ -248,18 +279,33 @@ function radarAngle(index){
 
 // init scatterplot select menu
 function initMenu(id, entries) {
-    $("select#" + id).empty();
+    //console.log("Initializing menu for:", id, "with entries:", entries);
 
-    entries.forEach(function (d) {
-        $("select#" + id).append("<option>" + d + "</option>");
+    let select = $("#" + id); // jQuery selector for the select element
+    select.empty(); // Clear previous options
+
+    entries.forEach(function(entry) {
+        select.append(new Option(entry, entry));
     });
 
-    $("#" + id).selectmenu({
-        select: function () {
-            renderScatterplot();
-        }
-    });
+    if ($.isEmptyObject(select.data("ui-selectmenu"))) {
+        // Initialize selectmenu
+        select.selectmenu({
+            create: function(event, ui) {
+                //console.log("Selectmenu created for:", id);
+            },
+            select: function(event, ui) {
+                //console.log("Option selected on:", id, "with value:", ui.item.value);
+                renderScatterplot();
+            }
+        });
+    } else {
+        // Refresh the selectmenu
+        select.selectmenu("refresh");
+        console.log("Selectmenu refreshed for:", id);
+    }
 }
+
 
 // refresh menu after reloading data
 function refreshMenu(id){
@@ -273,7 +319,7 @@ function readMenu(id){
 
 // switches and displays the tabs
 function openPage(pageName,elmnt,color) {
-    var i, tabcontent, tablinks;
+    let i, tabcontent, tablinks;
     tabcontent = document.getElementsByClassName("tabcontent");
     for (i = 0; i < tabcontent.length; i++) {
         tabcontent[i].style.display = "none";
