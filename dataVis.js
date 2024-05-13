@@ -179,6 +179,7 @@ function renderScatterplot(){
     // TODO: get domain names from menu and label x- and y-axis
     const x_attribute = readMenu('scatterX');
     const y_attribute = readMenu('scatterY');
+    const sizeAttribute=readMenu('size');
     
     let x = d3.scaleLinear()
         .domain(d3.extent(objArr, d => d[x_attribute]))
@@ -187,7 +188,9 @@ function renderScatterplot(){
     let y = d3.scaleLinear()
         .domain(d3.extent(objArr, d => d[y_attribute]))
         .range([height - margin.bottom - margin.top, margin.top]);
-
+    let size = d3.scaleLinear()
+        .domain(d3.extent(objArr, d => +d[sizeAttribute]))
+        .range([3, 20]);
     // TODO: re-render axes
     // Update axes with new scales
     yAxis.call(d3.axisLeft(y));
@@ -197,7 +200,19 @@ function renderScatterplot(){
     xAxisLabel.text(x_attribute);
     
     // TODO: render dots
+    const circles = scatter.selectAll("circle")
+        .data(objArr);
+    circles.enter().append("circle")
+        .attr("class", "dot")
+        .attr("cx", d=>x(d[x_attribute]))
+        .attr("cy", d=>y(d[y_attribute]))
+        .attr("r", d=>x(d[sizeAttribute])) ;
 
+    circles
+        .attr("cx", d => x(d[x_attribute]))
+        .attr("cy", d => y(d[y_attribute]))
+        .attr("r", d => size(d[sizeAttribute]));
+    circles.exit().remove();
 }
 
 
