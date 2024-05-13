@@ -72,7 +72,6 @@ function init() {
 
             // TODO: parse reader.result data and call the init functions with the parsed data!
             initVis(fileInput.files[0]);
-            CreateDataTable(null);
             // TODO: possible place to call the dashboard file for Part 2
             initDashboard(null);
         };
@@ -92,9 +91,6 @@ function initVis(_data){
            data.forEach(d => {
                objArr.push(d)
            })
-            console.log(objArr);
-            console.log(dimensionArr);
-            
             // init menu for the visual channels: Due to asynchronous execution, had to move this into the d3.csv loading process
             channels.forEach(function(c){
                 initMenu(c, dimensionArr);
@@ -104,23 +100,7 @@ function initVis(_data){
             channels.forEach(function(c){
                 refreshMenu(c);
             });
-            const container = d3.select("#dataTable")
-                .append("div").attr("class", "container");
-
-            const table=container.append("table").attr("class", "dataTableClass");
-            const thead = table.append("thead")
-            const headerRow = thead.append("tr");
-
-            dimensionArr.forEach(key => {
-                headerRow.append("th").attr("class","tableHeaderClass").text(key);
-            });
-            const tbody = table.append("tbody");
-            objArr.forEach(item => {
-                const row = tbody.append("tr");
-               dimensionArr.forEach(key => {
-                   row.append("td").attr("class","tableBodyClass").text(item[key]);
-                });
-            });
+            CreateDataTable(data);
             // Moved radarChart function to have access to dimensions
             renderRadarChart(dimensionArr);
         });
@@ -173,12 +153,25 @@ function clear(){
 
 //Create Table
 function CreateDataTable(_data) {
-
     // TODO: create table and add class
-
+    const container = d3.select("#dataTable")
+        .append("div").attr("class", "container");
     // TODO: add headers, row & columns
+    const table=container.append("table").attr("class", "dataTableClass");
+    const thead = table.append("thead")
+    const headerRow = thead.append("tr");
 
+    dimensionArr.forEach(key => {
+        headerRow.append("th").attr("class","tableHeaderClass").text(key);
+    });
+    const tbody = table.append("tbody");
     // TODO: add mouseover event
+    objArr.forEach(item => {
+        const row = tbody.append("tr");
+        dimensionArr.forEach(key => {
+            row.append("td").attr("class","tableBodyClass").text(item[key]);
+        });
+    });
 
 }
 function renderScatterplot(){
