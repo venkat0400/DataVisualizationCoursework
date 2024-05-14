@@ -98,9 +98,7 @@ async function initVis(_data){
             channels.forEach(function(c){
                 refreshMenu(c);
             });
-            CreateDataTable(data);
             // Moved radarChart function to have access to dimensions
-            renderRadarChart(dimensionArr);
 
 
     // y scalings for scatterplot
@@ -138,8 +136,10 @@ async function initVis(_data){
         .style("text-anchor", "middle")
         .attr("x", width - margin.right)
         .text("y");
-    
+    CreateDataTable(data);
     renderScatterplot();
+    renderRadarChart(dimensionArr);
+
 }
 
 // clear visualizations before loading a new file
