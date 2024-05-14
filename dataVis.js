@@ -193,11 +193,11 @@ function renderScatterplot(){
         .range([3, 20]);
     // TODO: re-render axes
     // Update axes with new scales
-    yAxis.call(d3.axisLeft(y));
-    yAxisLabel.text(y_attribute);  // Update y-axis label
-
     xAxis.call(d3.axisBottom(x));
+    yAxis.call(d3.axisLeft(y));
+
     xAxisLabel.text(x_attribute);
+    yAxisLabel.text(y_attribute);  // Update y-axis label
     
     // TODO: render dots
     const circles = scatter.selectAll("circle")
@@ -313,7 +313,6 @@ function initMenu(id, entries) {
         console.log("Selectmenu refreshed for:", id);
     }
 }
-
 
 // refresh menu after reloading data
 function refreshMenu(id){
