@@ -81,16 +81,14 @@ function init() {
 }
 
 
-function initVis(_data){
+async function initVis(_data){
 
     // TODO: parse dimensions (i.e., attributes) from input file
 
-        d3.csv(_data.name).then( function(data){
+        const data=await d3.csv(_data.name);
             
-            dimensionArr=Object.keys(data[0])
-           data.forEach(d => {
-               objArr.push(d)
-           })
+        dimensionArr=Object.keys(data[0]);
+        objArr=data;
             // init menu for the visual channels: Due to asynchronous execution, had to move this into the d3.csv loading process
             channels.forEach(function(c){
                 initMenu(c, dimensionArr);
@@ -103,7 +101,7 @@ function initVis(_data){
             CreateDataTable(data);
             // Moved radarChart function to have access to dimensions
             renderRadarChart(dimensionArr);
-        });
+
 
     // y scalings for scatterplot
     // TODO: set y domain for each dimension
@@ -175,12 +173,12 @@ function CreateDataTable(_data) {
 
 }
 function renderScatterplot(){
-
+    console.log(dimensionArr);
     // TODO: get domain names from menu and label x- and y-axis
     const x_attribute = readMenu('scatterX');
     const y_attribute = readMenu('scatterY');
     const sizeAttribute=readMenu('size');
-    
+
     let x = d3.scaleLinear()
         .domain(d3.extent(objArr, d => d[x_attribute]))
         .range([margin.left, width - margin.left - margin.right]);
@@ -212,6 +210,7 @@ function renderScatterplot(){
         .attr("cx", d => x(d[x_attribute]))
         .attr("cy", d => y(d[y_attribute]))
         .attr("r", d => size(d[sizeAttribute]));
+
     circles.exit().remove();
 }
 
