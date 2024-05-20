@@ -213,7 +213,7 @@ function renderScatterplot(){
         .attr("cy", d=>y(d[y_attribute]))
         .attr("r", d=>x(d[sizeAttribute]))
         .on("click", function(event, d) {
-        handleSelection(d);
+        pointsSelections(d);
     });
 
     circles
@@ -224,7 +224,7 @@ function renderScatterplot(){
 
     circles.exit().remove();
 }
-function handleSelection(schema) {
+function pointsSelections(schema) {
     const id = schema[dimensionArr[0]];
 
     if (pointsSelected.has(id)) {
@@ -244,9 +244,9 @@ function handleSelection(schema) {
         }
     }
     renderScatterplot();
-    updateLegend();
+    legendCreator();
 }
-function updateLegend() {
+function legendCreator() {
     const legend = d3.select("#legend").html(""); // Clear existing legend
     pointsSelected.forEach((color, id) => {
         const legendItem = legend.append("div")
