@@ -72,7 +72,6 @@ function init() {
 
             // TODO: parse reader.result data and call the init functions with the parsed data!
             initVis(fileInput.files[0]);
-            CreateDataTable(null);
             // TODO: possible place to call the dashboard file for Part 2
             initDashboard(null);
         };
@@ -82,19 +81,14 @@ function init() {
 }
 
 
-function initVis(_data){
+async function initVis(_data){
 
     // TODO: parse dimensions (i.e., attributes) from input file
 
-        d3.csv(_data.name).then( function(data){
+        const data=await d3.csv(_data.name);
             
-            dimensionArr=Object.keys(data[0])
-           data.forEach(d => {
-               objArr.push(d)
-           })
-            console.log(objArr);
-            console.log(dimensionArr);
-            
+        dimensionArr=Object.keys(data[0]);
+        objArr=data;
             // init menu for the visual channels: Due to asynchronous execution, had to move this into the d3.csv loading process
             channels.forEach(function(c){
                 initMenu(c, dimensionArr);
@@ -104,26 +98,8 @@ function initVis(_data){
             channels.forEach(function(c){
                 refreshMenu(c);
             });
-            const container = d3.select("#dataTable")
-                .append("div").attr("class", "container");
-
-            const table=container.append("table").attr("class", "dataTableClass");
-            const thead = table.append("thead")
-            const headerRow = thead.append("tr");
-
-            dimensionArr.forEach(key => {
-                headerRow.append("th").attr("class","tableHeaderClass").text(key);
-            });
-            const tbody = table.append("tbody");
-            objArr.forEach(item => {
-                const row = tbody.append("tr");
-               dimensionArr.forEach(key => {
-                   row.append("td").attr("class","tableBodyClass").text(item[key]);
-                });
-            });
             // Moved radarChart function to have access to dimensions
-            renderRadarChart(dimensionArr);
-        });
+
 
     // y scalings for scatterplot
     // TODO: set y domain for each dimension
@@ -160,8 +136,10 @@ function initVis(_data){
         .style("text-anchor", "middle")
         .attr("x", width - margin.right)
         .text("y");
-    
+    CreateDataTable(data);
     renderScatterplot();
+    renderRadarChart(dimensionArr);
+
 }
 
 // clear visualizations before loading a new file
@@ -173,38 +151,68 @@ function clear(){
 
 //Create Table
 function CreateDataTable(_data) {
-
     // TODO: create table and add class
-
+    const container = d3.select("#dataTable")
+        .append("div").attr("class", "container");
     // TODO: add headers, row & columns
+    const table=container.append("table").attr("class", "dataTableClass");
+    const thead = table.append("thead")
+    const headerRow = thead.append("tr");
 
+    dimensionArr.forEach(key => {
+        headerRow.append("th").attr("class","tableHeaderClass").text(key);
+    });
+    const tbody = table.append("tbody");
     // TODO: add mouseover event
+    objArr.forEach(item => {
+        const row = tbody.append("tr");
+        dimensionArr.forEach(key => {
+            row.append("td").attr("class","tableBodyClass").text(item[key]);
+        });
+    });
 
 }
 function renderScatterplot(){
-
+    console.log(dimensionArr);
     // TODO: get domain names from menu and label x- and y-axis
     const x_attribute = readMenu('scatterX');
     const y_attribute = readMenu('scatterY');
-    
+    const sizeAttribute=readMenu('size');
+
     let x = d3.scaleLinear()
-        .domain(d3.extent(objArr, d => d[x_attribute]))
+        .domain(d3.extent(objArr, d => +d[x_attribute]))
         .range([margin.left, width - margin.left - margin.right]);
 
     let y = d3.scaleLinear()
-        .domain(d3.extent(objArr, d => d[y_attribute]))
+        .domain(d3.extent(objArr, d => +d[y_attribute]))
         .range([height - margin.bottom - margin.top, margin.top]);
 
+    let size = d3.scaleLinear()
+        .domain(d3.extent(objArr, d => +d[sizeAttribute]))
+        .range([3, 20]);
     // TODO: re-render axes
     // Update axes with new scales
-    yAxis.call(d3.axisLeft(y));
-    yAxisLabel.text(y_attribute);  // Update y-axis label
-
     xAxis.call(d3.axisBottom(x));
+    yAxis.call(d3.axisLeft(y));
+
     xAxisLabel.text(x_attribute);
+    yAxisLabel.text(y_attribute);  // Update y-axis label
     
     // TODO: render dots
+    const circles = scatter.selectAll("circle")
+        .data(objArr);
+    circles.enter().append("circle")
+        .attr("class", "dot")
+        .attr("cx", d=>x(d[x_attribute]))
+        .attr("cy", d=>y(d[y_attribute]))
+        .attr("r", d=>x(d[sizeAttribute])) ;
 
+    circles
+        .attr("cx", d => x(d[x_attribute]))
+        .attr("cy", d => y(d[y_attribute]))
+        .attr("r", d => size(d[sizeAttribute]));
+
+    circles.exit().remove();
 }
 
 
@@ -305,7 +313,6 @@ function initMenu(id, entries) {
         console.log("Selectmenu refreshed for:", id);
     }
 }
-
 
 // refresh menu after reloading data
 function refreshMenu(id){
