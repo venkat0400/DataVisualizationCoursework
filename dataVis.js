@@ -29,7 +29,12 @@ let scatter, radar, dataTable;
 
 // Add additional variables
 let objArr = []
-let dimensionArr=[]
+
+
+let pointsSelected = new Map();
+const maxSelections = 8;
+const colors = d3.schemeCategory10;
+let usedColors = new Set();
 
 function init() {
     // define size of plots
@@ -87,11 +92,11 @@ async function initVis(_data){
 
         const data=await d3.csv(_data.name);
             
-        dimensionArr=Object.keys(data[0]);
+        dimensions=Object.keys(data[0]);
         objArr=data;
             // init menu for the visual channels: Due to asynchronous execution, had to move this into the d3.csv loading process
             channels.forEach(function(c){
-                initMenu(c, dimensionArr);
+                initMenu(c, dimensions);
             });
 
             // refresh all select menus
@@ -138,7 +143,7 @@ async function initVis(_data){
         .text("y");
     CreateDataTable(data);
     renderScatterplot();
-    renderRadarChart(dimensionArr);
+    renderRadarChart(dimensions);
 
 }
 
@@ -147,6 +152,7 @@ function clear(){
     scatter.selectAll("*").remove();
     radar.selectAll("*").remove();
     dataTable.selectAll("*").remove();
+    pointsSelected.clear();
 }
 
 //Create Table
@@ -159,21 +165,21 @@ function CreateDataTable(_data) {
     const thead = table.append("thead")
     const headerRow = thead.append("tr");
 
-    dimensionArr.forEach(key => {
+    dimensions.forEach(key => {
         headerRow.append("th").attr("class","tableHeaderClass").text(key);
     });
     const tbody = table.append("tbody");
     // TODO: add mouseover event
     objArr.forEach(item => {
         const row = tbody.append("tr");
-        dimensionArr.forEach(key => {
+        dimensions.forEach(key => {
             row.append("td").attr("class","tableBodyClass").text(item[key]);
         });
     });
 
 }
 function renderScatterplot(){
-    console.log(dimensionArr);
+    console.log(dimensions);
     // TODO: get domain names from menu and label x- and y-axis
     const x_attribute = readMenu('scatterX');
     const y_attribute = readMenu('scatterY');
@@ -205,14 +211,56 @@ function renderScatterplot(){
         .attr("class", "dot")
         .attr("cx", d=>x(d[x_attribute]))
         .attr("cy", d=>y(d[y_attribute]))
-        .attr("r", d=>x(d[sizeAttribute])) ;
+        .attr("r", d=>x(d[sizeAttribute]))
+        .on("click", function(event, d) {
+        pointsSelections(d);
+    });
 
     circles
         .attr("cx", d => x(d[x_attribute]))
         .attr("cy", d => y(d[y_attribute]))
-        .attr("r", d => size(d[sizeAttribute]));
+        .attr("r", d => size(d[sizeAttribute]))
+        .style("fill", d => pointsSelected.has(d[dimensions[0]]) ? pointsSelected.get(d[dimensions[0]]) : "black");
 
     circles.exit().remove();
+}
+function pointsSelections(schema) {
+    const id = schema[dimensions[0]];
+
+    if (pointsSelected.has(id)) {
+        const color = pointsSelected    .get(id);
+        pointsSelected.delete(id);
+        usedColors.delete(color);
+    } else {
+        if (pointsSelected.size < maxSelections) {
+            const colorAvailable = colors.find(color => !usedColors.has(color));
+            if (colorAvailable) {
+                pointsSelected.set(id, colorAvailable);
+                usedColors.add(colorAvailable);
+            }
+        } else {
+            alert("Maximum number of selections reached!");
+            return;
+        }
+    }
+    renderScatterplot();
+    legendCreator();
+}
+function legendCreator() {
+    const legend = d3.select("#legend").html(""); // Clear existing legend
+    pointsSelected.forEach((color, id) => {
+        const legendItem = legend.append("div")
+            .style("display", "flex")
+            .style("align-items", "center")
+            .style("margin-bottom", "5px"); // Optional: Add some space between legend items
+
+        legendItem.append("div")
+            .attr("class", "color-circle")
+            .style("background-color", color);
+
+        legendItem.append("span")
+            .text(id);
+    });
 }
 
 

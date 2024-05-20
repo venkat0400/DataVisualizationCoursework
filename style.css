@@ -137,7 +137,7 @@ fieldset {
     opacity: 0.6;
     filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
 }
-.dor:hover{
+.dot:hover{
     opacity: 1;
 }
 /* tooltip for the scatterplot */
