@@ -242,8 +242,16 @@ function handleSelection(schema) {
 function updateLegend() {
     const legend = d3.select("#legend").html(""); // Clear existing legend
     pointsSelected.forEach((color, id) => {
-        legend.append("div")
-            .style("color", color)
+        const legendItem = legend.append("div")
+            .style("display", "flex")
+            .style("align-items", "center")
+            .style("margin-bottom", "5px"); // Optional: Add some space between legend items
+
+        legendItem.append("div")
+            .attr("class", "color-circle")
+            .style("background-color", color);
+
+        legendItem.append("span")
             .text(id);
     });
 }
