@@ -34,6 +34,7 @@ let dimensionArr=[]
 let pointsSelected = new Map();
 const maxSelections = 8;
 const colors = d3.schemeCategory10;
+let usedColors = new Set();
 
 function init() {
     // define size of plots
@@ -227,10 +228,16 @@ function handleSelection(schema) {
     const id = schema[dimensionArr[0]];
 
     if (pointsSelected.has(id)) {
+        const color = pointsSelected    .get(id);
         pointsSelected.delete(id);
+        usedColors.delete(color);
     } else {
         if (pointsSelected.size < maxSelections) {
-            pointsSelected.set(id, colors[pointsSelected.size % colors.length]);
+            const colorAvailable = colors.find(color => !usedColors.has(color));
+            if (colorAvailable) {
+                pointsSelected.set(id, colorAvailable);
+                usedColors.add(colorAvailable);
+            }
         } else {
             alert("Maximum number of selections reached!");
             return;
