@@ -143,8 +143,7 @@ async function initVis(_data){
         .text("y");
     CreateDataTable(data);
     renderScatterplot();
-    renderRadarChart(dimensions);
-
+    //renderRadarChart(dimensions);
 }
 
 // clear visualizations before loading a new file
@@ -228,7 +227,7 @@ function pointsSelections(schema) {
     const id = schema[dimensions[0]];
 
     if (pointsSelected.has(id)) {
-        const color = pointsSelected    .get(id);
+        const color = pointsSelected.get(id);
         pointsSelected.delete(id);
         usedColors.delete(color);
     } else {
@@ -245,6 +244,7 @@ function pointsSelections(schema) {
     }
     renderScatterplot();
     legendCreator();
+    renderRadarChart(dimensions);
 }
 function legendCreator() {
     const legend = d3.select("#legend").html(""); // Clear existing legend
@@ -259,16 +259,27 @@ function legendCreator() {
             .style("background-color", color);
 
         legendItem.append("span")
-            .text(id);
+            .text(id)
+            .style("padding-left", "5px");
     });
 }
 
 
 function renderRadarChart(attributes){
+
+    radar.selectAll("*").remove();
+    
+    // Filter out non-numerical attributes
+    attributes = attributes.filter(attribute => {
+        return objArr.every(d => !isNaN(parseFloat(d[attribute])));
+    });
+    
     // radar chart axes
     radarAxesAngle = Math.PI * 2 / attributes.length;
     let levels = 5;
     let label_radius = radius * 1.2; // Extends the radius for better label placement
+
+    const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
     // Draw axes
     radar.selectAll(".axis")
@@ -317,6 +328,36 @@ function renderRadarChart(attributes){
         .attr("text-anchor", "middle")
         .attr("alignment-baseline", "middle")
         .style("user-select", "none");
+
+    // Map data points to the radar chart
+    
+    pointsSelected.forEach((color, id) => {
+        const data = objArr.find(d => d[dimensions[0]] === id);
+        if (!data) return;
+
+        const points = attributes.map((attribute, i) => {
+            const value = parseFloat(data[attribute]);
+            const max = d3.max(objArr, d => parseFloat(d[attribute]));
+            if (isNaN(value) || isNaN(max)) {
+                console.error(`Invalid data for attribute ${attribute}: value=${value}, max=${max}`);
+                return [NaN, NaN];
+            }
+            return [
+                radarX((value / max) * radius, i, radarAxesAngle),
+                radarY((value / max) * radius, i, radarAxesAngle)
+            ];
+        });
+
+        points.push(points[0]); // Close the shape
+
+        radar.append("path")
+            .data([points])
+            .attr("d", d3.line().curve(d3.curveLinearClosed))
+            .style("stroke-width", 2)
+            .style("stroke", color)
+            .style("fill", "none")
+            .style("opacity", 0.6);
+    });
     
 }
 
