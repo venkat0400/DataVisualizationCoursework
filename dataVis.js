@@ -180,12 +180,13 @@ function renderScatterplot(){
     const sizeAttribute=readMenu('size');
 
     let x = d3.scaleLinear()
-        .domain(d3.extent(objArr, d => d[x_attribute]))
+        .domain(d3.extent(objArr, d => +d[x_attribute]))
         .range([margin.left, width - margin.left - margin.right]);
 
     let y = d3.scaleLinear()
-        .domain(d3.extent(objArr, d => d[y_attribute]))
+        .domain(d3.extent(objArr, d => +d[y_attribute]))
         .range([height - margin.bottom - margin.top, margin.top]);
+
     let size = d3.scaleLinear()
         .domain(d3.extent(objArr, d => +d[sizeAttribute]))
         .range([3, 20]);
