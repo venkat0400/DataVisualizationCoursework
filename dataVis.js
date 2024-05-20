@@ -31,6 +31,10 @@ let scatter, radar, dataTable;
 let objArr = []
 let dimensionArr=[]
 
+let pointsSelected = new Map();
+const maxSelections = 8;
+const colors = d3.schemeCategory10;
+
 function init() {
     // define size of plots
     margin = {top: 20, right: 20, bottom: 20, left: 50};
@@ -147,6 +151,7 @@ function clear(){
     scatter.selectAll("*").remove();
     radar.selectAll("*").remove();
     dataTable.selectAll("*").remove();
+    pointsSelected.clear();
 }
 
 //Create Table
@@ -205,14 +210,42 @@ function renderScatterplot(){
         .attr("class", "dot")
         .attr("cx", d=>x(d[x_attribute]))
         .attr("cy", d=>y(d[y_attribute]))
-        .attr("r", d=>x(d[sizeAttribute])) ;
+        .attr("r", d=>x(d[sizeAttribute]))
+        .on("click", function(event, d) {
+        handleSelection(d);
+    });
 
     circles
         .attr("cx", d => x(d[x_attribute]))
         .attr("cy", d => y(d[y_attribute]))
-        .attr("r", d => size(d[sizeAttribute]));
+        .attr("r", d => size(d[sizeAttribute]))
+        .style("fill", d => pointsSelected.has(d[dimensionArr[0]]) ? pointsSelected.get(d[dimensionArr[0]]) : "black");
 
     circles.exit().remove();
+}
+function handleSelection(schema) {
+    const id = schema[dimensionArr[0]];
+
+    if (pointsSelected.has(id)) {
+        pointsSelected.delete(id);
+    } else {
+        if (pointsSelected.size < maxSelections) {
+            pointsSelected.set(id, colors[pointsSelected.size % colors.length]);
+        } else {
+            alert("Maximum number of selections reached!");
+            return;
+        }
+    }
+    renderScatterplot();
+    updateLegend();
+}
+function updateLegend() {
+    const legend = d3.select("#legend").html(""); // Clear existing legend
+    pointsSelected.forEach((color, id) => {
+        legend.append("div")
+            .style("color", color)
+            .text(id);
+    });
 }
 
 
