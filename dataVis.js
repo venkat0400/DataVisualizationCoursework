@@ -277,6 +277,15 @@ function legendCreator() {
         legendItem.append("span")
             .text(id)
             .style("padding-left", "5px");
+
+        legendItem.append("button")
+            .text("x")
+            .attr("class", "remove-btn")
+            .style("margin-left", "10px")
+            .style("cursor", "pointer")
+            .on("click", function() {
+                legendClick(id);
+            });
     });
 }
 function legendClick(id) {
