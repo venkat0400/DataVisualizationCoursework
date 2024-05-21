@@ -203,6 +203,10 @@ function renderScatterplot(){
     xAxisLabel.text(x_attribute);
     yAxisLabel.text(y_attribute);  // Update y-axis label
     
+    // Update axes with new scales  NEW CODE
+    xAxis.transition().duration(1000).call(d3.axisBottom(x));
+    yAxis.transition().duration(1000).call(d3.axisLeft(y));
+    
     // TODO: render dots
     const circles = scatter.selectAll("circle")
         .data(objArr);
@@ -213,9 +217,17 @@ function renderScatterplot(){
         .attr("r", d=>x(d[sizeAttribute]))
         .on("click", function(event, d) {
         pointsSelections(d);
-    });
-
-    circles
+    })
+    .style("fill", d => pointsSelected.has(d[dimensions[0]]) ? pointsSelected.get(d[dimensions[0]]) : "black")
+        .transition() // Add transition for entering circles
+        .duration(800)
+        .attr("cx", d => x(d[x_attribute]))
+        .attr("cy", d => y(d[y_attribute]))
+        .attr("r", d => size(d[sizeAttribute]));
+    
+    // Update phase: update existing circles
+    circles.transition() // Add transition for updating circles
+        .duration(1000)
         .attr("cx", d => x(d[x_attribute]))
         .attr("cy", d => y(d[y_attribute]))
         .attr("r", d => size(d[sizeAttribute]))
