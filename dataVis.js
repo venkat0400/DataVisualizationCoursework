@@ -264,7 +264,11 @@ function legendCreator() {
         const legendItem = legend.append("div")
             .style("display", "flex")
             .style("align-items", "center")
-            .style("margin-bottom", "5px"); // Optional: Add some space between legend items
+            .style("margin-bottom", "5px")
+            .style("cursor", "pointer") // Add pointer cursor for clickability
+            .on("click", function() {
+                legendClick(id);
+            });
 
         legendItem.append("div")
             .attr("class", "color-circle")
@@ -273,9 +277,27 @@ function legendCreator() {
         legendItem.append("span")
             .text(id)
             .style("padding-left", "5px");
+
+        legendItem.append("button")
+            .text("x")
+            .attr("class", "remove-btn")
+            .style("margin-left", "10px")
+            .style("cursor", "pointer")
+            .on("click", function() {
+                legendClick(id);
+            });
     });
 }
-
+function legendClick(id) {
+    if (pointsSelected.has(id)) {
+        const color = pointsSelected.get(id);
+        pointsSelected.delete(id);
+        usedColors.delete(color);
+        renderScatterplot();
+        legendCreator();
+        renderRadarChart(dimensions);
+    }
+}
 
 function renderRadarChart(attributes){
 
