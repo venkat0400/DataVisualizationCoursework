@@ -91,7 +91,7 @@ async function initVis(_data){
     // TODO: parse dimensions (i.e., attributes) from input file
 
         const data=await d3.csv(_data.name);
-            
+            //load the csv file and fill the dimensions and the repsective entries
         dimensions=Object.keys(data[0]);
         objArr=data;
             // init menu for the visual channels: Due to asynchronous execution, had to move this into the d3.csv loading process
@@ -143,7 +143,6 @@ async function initVis(_data){
         .text("y");
     CreateDataTable(data);
     renderScatterplot();
-    //renderRadarChart(dimensions);
 }
 
 // clear visualizations before loading a new file
@@ -180,9 +179,9 @@ function CreateDataTable(_data) {
 function renderScatterplot(){
     console.log(dimensions);
     // TODO: get domain names from menu and label x- and y-axis
-    const x_attribute = readMenu('scatterX');
-    const y_attribute = readMenu('scatterY');
-    const sizeAttribute=readMenu('size');
+    const x_attribute = readMenu(channels[0]);
+    const y_attribute = readMenu(channels[1]);
+    const sizeAttribute=readMenu(channels[2]);
 
     let x = d3.scaleLinear()
         .domain(d3.extent(objArr, d => +d[x_attribute]))
@@ -235,6 +234,8 @@ function renderScatterplot(){
 
     circles.exit().remove();
 }
+
+//Function to handle the selection of points, which points were selected and to maintain a log of used colors.
 function pointsSelections(schema) {
     const id = schema[dimensions[0]];
 
@@ -258,6 +259,8 @@ function pointsSelections(schema) {
     legendCreator();
     renderRadarChart(dimensions);
 }
+
+//Function to handle legend.
 function legendCreator() {
     const legend = d3.select("#legend").html(""); // Clear existing legend
     pointsSelected.forEach((color, id) => {
@@ -288,6 +291,7 @@ function legendCreator() {
             });
     });
 }
+//Function hand the click functionality in the legend
 function legendClick(id) {
     if (pointsSelected.has(id)) {
         const color = pointsSelected.get(id);
