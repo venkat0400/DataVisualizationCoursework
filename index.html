@@ -20,6 +20,8 @@
 
     <!-- include d3 -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Include D3 Sankey plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
 
     <!-- include jQueryUI -->
     <script src="https://code.jquery.com/jquery-3.6.1.js"></script>
@@ -129,15 +131,29 @@
 
         <!-- chart 3 -->
         <div class="container">
-            <h2>Chart 3</h2>
+            <h2>Sankey Diagram</h2>
 			  <h4>Data representation 3.</h4>
-            <!-- radar chart SVG -->
+
+            <!-- Dropdown menus for Sankey Diagram -->
+            <form id="sankeyForm">
+                <fieldset>
+                    <label for="sankeySource">Source:</label>
+                    <select name="sankeySource" id="sankeySource"></select>
+                    <br/>
+                    <label for="sankeyTarget">Target:</label>
+                    <select name="sankeyTarget" id="sankeyTarget"></select>
+                    <br/>
+                    <label for="sankeyValue">Value:</label>
+                    <select name="sankeyValue" id="sankeyValue"></select>
+                </fieldset>
+            </form>
+
             <div id="sankey"></div>
         </div>
 
         <!-- chart 4 -->
         <div class="container">
-            <h2>Chart 4</h2>
+            <h2>Heat Map</h2>
             <h4>Data representation 4.</h4>
             <!-- radar chart SVG -->
             <div id="heat-map"></div>
