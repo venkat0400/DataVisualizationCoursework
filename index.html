@@ -158,8 +158,22 @@
         <div class="container">
             <h2>Heat Map</h2>
             <h4>Data representation 4.</h4>
+
             <!-- radar chart SVG -->
-            <div id="heat-map"></div>
+            <!-- Controls for Heatmap -->
+            <div class="controls">
+                <label for="x-axis">X-axis:</label>
+                <select id="x-axis"></select>
+                <label for="y-axis">Y-axis:</label>
+                <select id="y-axis"></select>
+                <label for="value">Value:</label>
+                <select id="value"></select>
+                <button id="update-heatmap">Update Heatmap</button>
+            </div>
+
+            <div id="heatmap"></div>
+            <div class="tooltip" id="tooltip" style="display: none;"></div>
+
         </div>
 
     </div>
