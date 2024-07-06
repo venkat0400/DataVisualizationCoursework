@@ -72,9 +72,12 @@ function createChart1(){
         let dataGeo = initialize[0];
         let data = initialize[1];
 
+        // Clear previous elements
+        svg.selectAll("*").remove();
+
         // Create a color scale
         const color = d3.scaleOrdinal()
-            .domain(data.map(d => d[attribute])) // Adjust if needed
+            .domain(data.map(d => d["WHO Region"])) // Adjust if needed
             .range(d3.schemePaired);
 
         // Add a scale for bubble size
@@ -100,7 +103,7 @@ function createChart1(){
             .attr("cx", d => projection([+d.longitude, +d.latitude])[0])
             .attr("cy", d => projection([+d.longitude, +d.latitude])[1])
             .attr("r", d => size(+d[attribute]))
-            .style("fill", d => color(d[attribute])) // Adjust if needed
+            .style("fill", d => color(d["WHO Region"])) // Adjust if needed
             .attr("stroke", d => { if (d[attribute] > 2000) { return "black"; } else { return "none"; } })
             .attr("stroke-width", 1)
             .attr("fill-opacity", .4);
@@ -113,7 +116,7 @@ function createChart1(){
             .attr("y", height - 30)
             .attr("width", 90)
             .style("font-size", 14)
-            .text("Covid Cases Chart");
+            .text("Bubbles on World Map");
 
         // Add legend: circles
         const valuesToShow = [100, 4000, 15000];
