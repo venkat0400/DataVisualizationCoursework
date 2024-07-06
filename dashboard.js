@@ -45,14 +45,16 @@ function initDashboard(_data) {
         .attr("height", height)
         .append("g");
 
-
-    createChart1(_data);
+    document.getElementById('bubbleAttribute').addEventListener('change', createChart1);
+    document.addEventListener('DOMContentLoaded', function() {
+        createChart1();
+    });
     createChart2();
     createChart3();
     createChart4();
 }
 
-function createChart1(_data){
+function createChart1(){
     const svg = d3.select("#chart1 svg");
 
     const projection = d3.geoMercator()
@@ -169,7 +171,4 @@ function clearDashboard() {
     chart3.selectAll("*").remove();
     chart4.selectAll("*").remove();
 }
-document.getElementById('bubbleAttribute').addEventListener('change', createChart1);
-document.addEventListener('DOMContentLoaded', function() {
-    createChart1();
-});
+
