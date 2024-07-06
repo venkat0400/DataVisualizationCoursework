@@ -116,7 +116,7 @@ function createChart1(){
             .attr("y", height - 30)
             .attr("width", 90)
             .style("font-size", 14)
-            .text("Bubbles on World Map");
+            .text("Covid Cases Statistics");
 
         // Add legend: circles
         const valuesToShow = [100, 4000, 15000];
