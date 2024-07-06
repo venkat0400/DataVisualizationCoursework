@@ -114,7 +114,23 @@
         <!-- chart 1 -->
         <div class="container">
            <h2>Chart 1</h2>
-			<h4>Data representation 1.</h4>
+			<h4>Bubble Map Representation</h4>
+            <label for="bubbleAttribute">Select Attribute:</label>
+            <select id="bubbleAttribute">
+                <option value="Confirmed">Confirmed</option>
+                <option value="Deaths">Deaths</option>
+                <option value="Recovered">Recovered</option>
+                <option value="Active">Active</option>
+                <option value="New cases">New cases</option>
+                <option value="New deaths">New deaths</option>
+                <option value="New recovered">New recovered</option>
+                <option value="Deaths / 100 Cases">Deaths / 100 Cases</option>
+                <option value="Recovered / 100 Cases">Recovered / 100 Cases</option>
+                <option value="Deaths / 100 Recovered">Deaths / 100 Recovered</option>
+                <option value="Confirmed last week">Confirmed last week</option>
+                <option value="1 week change">1 week change</option>
+                <option value="1 week % increase">1 week % increase</option>
+            </select>
             <!-- radar chart SVG -->
             <div id="chart1"></div>
         </div>

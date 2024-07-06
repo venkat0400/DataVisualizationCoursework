@@ -78,7 +78,7 @@ function init() {
             // TODO: parse reader.result data and call the init functions with the parsed data!
             initVis(fileInput.files[0]);
             // TODO: possible place to call the dashboard file for Part 2
-            initDashboard(null);
+            initDashboard(fileInput.files[0]);
         };
         reader.readAsBinaryString(fileInput.files[0]);
     };
