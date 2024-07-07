@@ -48,6 +48,8 @@ function initDashboard(_data) {
     document.getElementById('bubbleAttribute').addEventListener('change', createChart1);
     document.addEventListener('DOMContentLoaded', function() {
         createChart1();
+
+
     });
     createChart2();
     createChart3();
@@ -154,8 +156,59 @@ function createChart1(){
     });
 }
 
-function createChart2(){
+function createChart2() {
+    const svg = d3.select("#chart2")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
 
+
+        d3.csv("country_wise_latest_with_lat_lon.csv").then(function(data) {
+            // Filter the top 10 countries by the selected attribute
+            data = data.sort((a, b) => d3.descending(+a["Confirmed"], +b["Confirmed"])).slice(0, 10);
+
+            // Clear previous elements
+            svg.selectAll("*").remove();
+
+            // X axis
+            const x = d3.scaleBand()
+                .range([0, width])
+                .domain(data.map(d => d["Country"]))
+                .padding(0.2);
+
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .selectAll("text")
+                .attr("transform", "translate(-10,0)rotate(-45)")
+                .style("text-anchor", "end");
+
+            // Y axis
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(data, d => +d["Confirmed"])])
+                .range([height, 0]);
+
+            svg.append("g")
+                .call(d3.axisLeft(y));
+
+            // Bars
+            svg.selectAll("mybar")
+                .data(data)
+                .join("rect")
+                .attr("x", d => x(d["Country"]))
+                .attr("width", x.bandwidth())
+                .attr("fill", "#69b3a2")
+                // No bar at the beginning thus:
+                .attr("height", d => height - y(0)) // always equal to 0
+                .attr("y", d => y(0))
+                .transition()
+                .duration(800)
+                .attr("y", d => y(+d["Confirmed"]))
+                .attr("height", d => height - y(+d["Confirmed"]))
+                .delay((d,i) => i * 100);
+        });
 }
 
 function createChart3(){
