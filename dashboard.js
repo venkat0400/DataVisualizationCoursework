@@ -46,12 +46,13 @@ function initDashboard(_data) {
         .append("g");
 
     document.getElementById('bubbleAttribute').addEventListener('change', createChart1);
+    document.getElementById('bubbleAttribute').addEventListener('change', createChart2);
     document.addEventListener('DOMContentLoaded', function() {
         createChart1();
-
+        createChart2();
 
     });
-    createChart2();
+
     createChart3();
     createChart4();
 }
@@ -160,7 +161,7 @@ function createChart2() {
     const margin = {top: 20, right: 30, bottom: 90, left: 90},
         width = 800 - margin.left - margin.right,
         height = 600 - margin.top - margin.bottom;
-
+    let attribute = document.getElementById('bubbleAttribute').value;
     const svg = d3.select("#chart2")
         .append("svg")
         .attr("width", width + margin.left + margin.right)
@@ -217,7 +218,7 @@ function createChart2() {
     }
 
     // Initialize with default attribute
-    updateChart("Confirmed");
+    updateChart(attribute);
     // Event listeners for button clicks to update data
     document.getElementById("variable1").addEventListener("click", function() {
         updateChart("Confirmed");
