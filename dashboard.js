@@ -157,6 +157,10 @@ function createChart1(){
 }
 
 function createChart2() {
+    const margin = {top: 20, right: 30, bottom: 90, left: 90},
+        width = 800 - margin.left - margin.right,
+        height = 600 - margin.top - margin.bottom;
+
     const svg = d3.select("#chart2")
         .append("svg")
         .attr("width", width + margin.left + margin.right)
@@ -165,9 +169,10 @@ function createChart2() {
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
 
+    function updateChart(attribute) {
         d3.csv("country_wise_latest_with_lat_lon.csv").then(function(data) {
             // Filter the top 10 countries by the selected attribute
-            data = data.sort((a, b) => d3.descending(+a["Confirmed"], +b["Confirmed"])).slice(0, 10);
+            data = data.sort((a, b) => d3.descending(+a[attribute], +b[attribute])).slice(0, 10);
 
             // Clear previous elements
             svg.selectAll("*").remove();
@@ -187,7 +192,7 @@ function createChart2() {
 
             // Y axis
             const y = d3.scaleLinear()
-                .domain([0, d3.max(data, d => +d["Confirmed"])])
+                .domain([0, d3.max(data, d => +d[attribute])])
                 .range([height, 0]);
 
             svg.append("g")
@@ -205,10 +210,22 @@ function createChart2() {
                 .attr("y", d => y(0))
                 .transition()
                 .duration(800)
-                .attr("y", d => y(+d["Confirmed"]))
-                .attr("height", d => height - y(+d["Confirmed"]))
+                .attr("y", d => y(+d[attribute]))
+                .attr("height", d => height - y(+d[attribute]))
                 .delay((d,i) => i * 100);
         });
+    }
+
+    // Initialize with default attribute
+    updateChart("Confirmed");
+    // Event listeners for button clicks to update data
+    document.getElementById("variable1").addEventListener("click", function() {
+        updateChart("Confirmed");
+    });
+
+    document.getElementById("variable2").addEventListener("click", function() {
+        updateChart("Deaths");
+    });
 }
 
 function createChart3(){
