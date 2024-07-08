@@ -83,7 +83,7 @@ function createChart1(){
         // Create a color scale
         const color = d3.scaleOrdinal()
             .domain(data.map(d => d["WHORegion"])) // Adjust if needed
-            .range(d3.schemePaired);
+            .range(d3.schemePaired.slice(0,6));
 
         // Add a scale for bubble size
         const valueExtent = d3.extent(data, d => +d[attribute]);
@@ -100,7 +100,14 @@ function createChart1(){
             .attr("d", d3.geoPath().projection(projection))
             .style("stroke", "none")
             .style("opacity", .3);
-
+        const tooltip = d3.select("#chart1")
+            .append("div")
+            .style("position", "absolute")
+            .style("visibility", "hidden")
+            .style("background", "#f4f4f4")
+            .style("border", "1px solid #d4d4d4")
+            .style("padding", "5px")
+            .style("border-radius", "5px");
         // Add circles:
         svg.selectAll("myCircles")
             .data(data)
@@ -111,7 +118,23 @@ function createChart1(){
             .style("fill", d => color(d["WHORegion"])) // Adjust if needed
             .attr("stroke", d => { if (d[attribute] > 2000) { return "black"; } else { return "none"; } })
             .attr("stroke-width", 1)
-            .attr("fill-opacity", .4);
+            .attr("fill-opacity", .4)
+            .on("mouseover", function(event, d) {
+                tooltip.style("visibility", "visible")
+                    .html(`Country: ${d.Country}<br>Value: ${d[attribute]}`);
+                d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
+                console.log(d["WHORegion"]);
+            })
+            .on("mousemove", function(event) {
+                tooltip.style("top", (event.pageY - 10) + "px")
+                    .style("left", (event.pageX + 10) + "px");
+            })
+            .on("mouseout", function() {
+                tooltip.style("visibility", "hidden");
+                d3.select(this).attr("stroke", d => { if (d[attribute] > 2000) { return "black"; } else { return "none"; } }).attr("stroke-width", 1);
+            });
+
+
 
         // Add title and explanation
         svg.append("text")
