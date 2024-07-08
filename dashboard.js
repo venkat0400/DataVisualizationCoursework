@@ -100,6 +100,7 @@ function createChart1(){
             .attr("d", d3.geoPath().projection(projection))
             .style("stroke", "none")
             .style("opacity", .3);
+        //tooltip added
         const tooltip = d3.select("#chart1")
             .append("div")
             .style("position", "absolute")
@@ -108,6 +109,8 @@ function createChart1(){
             .style("border", "1px solid #d4d4d4")
             .style("padding", "5px")
             .style("border-radius", "5px");
+
+
         // Add circles:
         svg.selectAll("myCircles")
             .data(data)
@@ -123,7 +126,6 @@ function createChart1(){
                 tooltip.style("visibility", "visible")
                     .html(`Country: ${d.Country}<br>Value: ${d[attribute]}`);
                 d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
-                console.log(d["WHORegion"]);
             })
             .on("mousemove", function(event) {
                 tooltip.style("top", (event.pageY - 10) + "px")
