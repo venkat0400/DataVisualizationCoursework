@@ -35,54 +35,98 @@ body {
     background-color: #777;
 }
 
-/* Style the tab content (and add height:100% for full page content) */
+/* Style the tab content */
 .tabcontent {
     color: black;
     display: none;
-    padding: 100px 20px;
+    padding: 20px;
     height: 100%;
 }
 
+.tabcontent.show {
+    display: block;
+}
+
+/* Data Loading tab specific styles */
+#DataLoading {
+    padding: 20px;
+}
+
+#dataLoadingContent {
+    margin-top: 50px;
+}
+
 .dataTableClass {
-    width: 80%;
+    width: 100%;
     border-collapse: collapse;
     border: 2px black solid;
+    overflow-x: auto;
+    display: block;
+}
+
+.tableHeaderClass, .tableBodyClass {
+    border: 2px solid black;
+    padding: 5px;
 }
 
 .tableHeaderClass {
-    border: 2px solid black;
-    padding: 5px;
     background-color: lightgray;
     font-weight: bold;
     text-transform: uppercase;
 }
 
-
-.tableBodyClass {
-    border: 1px solid black;
-    padding: 5px;
-}
-.tableBodyClass:hover{
+.tableBodyClass:hover {
     background-color: cornflowerblue;
     cursor: pointer;
-
 }
+
 svg {
     font: 10px sans-serif;
+    width: 100%;
+    height: auto;
 }
 
-.container {
-    display: table-cell;
-    vertical-align: top;
-    height: 100%;
+/* Basic Visualization specific styles */
+.basicVisualizationGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    grid-gap: 10px;
     padding: 10px;
-    border: 0px solid black;
 }
 
 .dashboardGrid {
     display: grid;
-    grid-template-columns: auto auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
     grid-gap: 10px;
+    padding: 10px;
+}
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.container {
+    flex: 1;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    margin: 10px;
+}
+
+.controls {
+    margin-bottom: 10px;
+}
+
+#heatmap svg, #sankey svg, #scatterplot svg, #radar svg {
+    width: 100%;
+    height: auto;
 }
 
 .axis line,
@@ -137,9 +181,11 @@ fieldset {
     opacity: 0.6;
     filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
 }
-.dot:hover{
+
+.dot:hover {
     opacity: 1;
 }
+
 /* tooltip for the scatterplot */
 div.tooltip {
     position: absolute;
@@ -152,4 +198,35 @@ div.tooltip {
     border-radius: 8px;
     pointer-events: none;
     font-size: .7rem;
+}
+
+@media (max-width: 768px) {
+    .tablink {
+        width: 100%;
+    }
+
+    .basicVisualizationGrid, .dashboardGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .container {
+        padding: 5px;
+    }
+
+    .tabcontent {
+        padding: 10px;
+    }
+}
+
+#tooltip {
+    position: absolute;
+    text-align: center;
+    width: auto;
+    height: auto;
+    padding: 10px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
 }
