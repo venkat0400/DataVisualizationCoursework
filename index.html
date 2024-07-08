@@ -47,139 +47,116 @@
 </div>
 
 <!-- create buttons to select tabs -->
-<button class="tablink" onclick="openPage('DataLoading', this, 'blue')" id="defaultOpen" >Data Loading</button>
+<button class="tablink" onclick="openPage('DataLoading', this, 'blue')" id="defaultOpen">Data Loading</button>
 <button class="tablink" onclick="openPage('BasicVisualization', this, 'blue')">Basic Visualization</button>
 <button class="tablink" onclick="openPage('Dashboard', this, 'blue')">Dashboard</button>
 
 <!-- Tab 1 -->
 <div id="DataLoading" class="tabcontent">
-
-    <!-- data selector -->
-    <p>Select your data here: <input id="upload" type="file"></p>
-
+    <div id="dataLoadingContent">
+        <!-- data selector -->
+        <p>Select your data here: <input id="upload" type="file"></p>
+    </div>
     <!-- data table -->
-    <div id="dataTable"></div>
-
+    <div id="dataTableContainer">
+        <div id="dataTable"></div>
+    </div>
 </div>
 
 <!-- Tab 2 -->
 <div id="BasicVisualization" class="tabcontent">
-
-    <!-- scatterplot -->
-    <div class="container">
-        <!-- scatterplot menu -->
-        <h2>Scatterplot</h2>
-
-        <p>Select dimensions to be displayed here: </p>
-        <div id="menu">
-            <form action="#">
-                <fieldset>
-                    <label for="scatterX">x axis: </label>
-                    <select name="scatterX" id="scatterX">
-                    </select>
-                    <br/>
-                    <label for="scatterY">y axis: </label>
-                    <select name="scatterY" id="scatterY">
-                    </select>
-                    <br/>
-                    <label for="size">size: </label>
-                    <select name="size" id="size">
-                    </select>
-                </fieldset>
-            </form>
+    <!-- Basic Visualization Grid -->
+    <div class="basicVisualizationGrid">
+        <!-- scatterplot -->
+        <div class="container">
+            <!-- scatterplot menu -->
+            <h2>Scatterplot</h2>
+            <p>Select dimensions to be displayed here: </p>
+            <div id="menu">
+                <form action="#">
+                    <fieldset>
+                        <label for="scatterX">x axis: </label>
+                        <select name="scatterX" id="scatterX"></select><br/>
+                        <label for="scatterY">y axis: </label>
+                        <select name="scatterY" id="scatterY"></select><br/>
+                        <label for="size">size: </label>
+                        <select name="size" id="size"></select>
+                    </fieldset>
+                </form>
+            </div>
+            <!-- scatterplot SVG -->
+            <div id="sp"></div>
         </div>
-        <!-- scatterplot SVG -->
-        <div id="sp"></div>
-    </div>
 
-    <!-- radar chart -->
-    <div class="container">
-        <h2>Radar Chart</h2>
-        <!-- radar chart SVG -->
-        <div id="radar"></div>
-        <div id="legend">
-            <b>Legend:</b><br/>
+        <!-- radar chart -->
+        <div class="container">
+            <h2>Radar Chart</h2>
+            <!-- radar chart SVG -->
+            <div id="radar"></div>
+            <div id="legend">
+                <b>Legend:</b><br/>
+            </div>
         </div>
     </div>
-
 </div>
 
 <!-- Tab 3 -->
 <div id="Dashboard" class="tabcontent">
-    <h1>Dashboard Example</h1>
-
-    <!-- TODO: The environment of your dashboard can be freely customized. Here is a general layout to get you started. -->
 
     <!-- Grid container -->
     <div class="dashboardGrid">
-
-        <!-- chart 1 -->
-        <div class="container">
-           <h2>Chart 1</h2>
-			<h4>Data representation 1.</h4>
-            <!-- radar chart SVG -->
-            <div id="chart1"></div>
-        </div>
-
-        <!-- chart 2 -->
-        <div class="container">
-           <h2>Chart 2</h2>
-			 <h4>Data representation 2.</h4>
-            <!-- radar chart SVG -->
-            <div id="chart2"></div>
-        </div>
-
-        <!-- chart 3 -->
-        <div class="container">
-            <h2>Sankey Diagram</h2>
-			  <h4>Data representation 3.</h4>
-
-            <!-- Dropdown menus for Sankey Diagram -->
-            <form id="sankeyForm">
-                <fieldset>
-                    <label for="sankeySource">Grouping By:</label>
-                    <select name="sankeySource" id="sankeySource"></select>
-                    <br/>
-                    <label for="sankeyMiddle">Middle:</label>
-                    <select name="sankeyMiddle" id="sankeyMiddle"></select>
-                    <br/>
-                    <label for="sankeyTarget">Target:</label>
-                    <select name="sankeyTarget" id="sankeyTarget"></select>
-                    <br/>
-                    <label for="sankeyValue">Value:</label>
-                    <select name="sankeyValue" id="sankeyValue"></select>
-                </fieldset>
-            </form>
-
-            <div id="sankey"></div>
-        </div>
-
-        <!-- chart 4 -->
-        <div class="container">
-            <h2>Heat Map</h2>
-            <h4>Data representation 4.</h4>
-
-            <!-- radar chart SVG -->
-            <!-- Controls for Heatmap -->
-            <div class="controls">
-                <label for="x-axis">X-axis:</label>
-                <select id="x-axis"></select>
-                <label for="y-axis">Y-axis:</label>
-                <select id="y-axis"></select>
-                <label for="value">Value:</label>
-                <select id="value"></select>
-                <button id="update-heatmap">Update Heatmap</button>
+        <!-- First row: Chart 1 and Chart 2 -->
+        <div class="row">
+            <div class="container">
+                <h2>Chart 1</h2>
+                <h4>Data representation 1.</h4>
+                <div id="chart1"></div>
             </div>
-
-            <div id="heatmap"></div>
-            <div class="tooltip" id="tooltip" style="display: none;"></div>
-
+            <div class="container">
+                <h2>Chart 2</h2>
+                <h4>Data representation 2.</h4>
+                <div id="chart2"></div>
+            </div>
         </div>
-
+        <!-- Second row: Sankey Diagram and Heat Map -->
+        <div class="row">
+            <div class="container">
+                <h2>Sankey Diagram</h2>
+                <h4>Data representation 3.</h4>
+                <!-- Dropdown menus for Sankey Diagram -->
+                <form id="sankeyForm">
+                    <fieldset>
+                        <label for="sankeySource">Grouping By:</label>
+                        <select name="sankeySource" id="sankeySource"></select><br/>
+                        <label for="sankeyMiddle">Middle:</label>
+                        <select name="sankeyMiddle" id="sankeyMiddle"></select><br/>
+                        <label for="sankeyTarget">Target:</label>
+                        <select name="sankeyTarget" id="sankeyTarget"></select><br/>
+                        <label for="sankeyValue">Value:</label>
+                        <select name="sankeyValue" id="sankeyValue"></select>
+                    </fieldset>
+                </form>
+                <div id="sankey"></div>
+            </div>
+            <div class="container">
+                <h2>Heat Map</h2>
+                <h4>Data representation 4.</h4>
+                <!-- Controls for Heatmap -->
+                <div class="controls">
+                    <label for="x-axis">X-axis:</label>
+                    <select id="x-axis"></select>
+                    <label for="y-axis">Y-axis:</label>
+                    <select id="y-axis"></select>
+                    <label for="value">Value:</label>
+                    <select id="value"></select>
+                    <button id="update-heatmap">Update Heatmap</button>
+                </div>
+                <div id="heatmap"></div>
+                <div class="tooltip" id="tooltip" style="display: none;"></div>
+            </div>
+        </div>
     </div>
-
 </div>
-
 
 </body>
 </html>
