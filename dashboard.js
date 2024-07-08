@@ -161,10 +161,11 @@ function createChart1(){
 
 function createChart2() {
     const margin = {top: 20, right: 30, bottom: 90, left: 90},
-        width = 600 - margin.left - margin.right,
-        height = 500 - margin.top - margin.bottom;
+        width = 700 - margin.left - margin.right,
+        height = 550 - margin.top - margin.bottom;
     let attribute = document.getElementById('bubbleAttribute').value;
-    const svg = d3.select("#chart2 svg");
+    const svg = d3.select("#chart2 svg g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
 
 
     function updateChart(attribute) {
