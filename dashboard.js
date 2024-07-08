@@ -15,39 +15,6 @@
 // TODO: use descriptive names for variables
 let chart1, chart2, chart_sankey, chart4;
 
-/*
-const sampleData = {
-    nodes: [
-        { name: "North America" },
-        { name: "Europe" },
-        { name: "Asia" },
-        { name: "USA" },
-        { name: "Italy" },
-        { name: "Spain" },
-        { name: "Germany" },
-        { name: "China" },
-        { name: "South Korea" },
-        { name: "High" },
-        { name: "Medium" },
-        { name: "Low" }
-    ],
-    links: [
-        { source: 0, target: 3, value: 10000 }, // North America to USA
-        { source: 1, target: 4, value: 8000 }, // Europe to Italy
-        { source: 1, target: 5, value: 6000 }, // Europe to Spain
-        { source: 1, target: 6, value: 4000 }, // Europe to Germany
-        { source: 2, target: 7, value: 50000 }, // Asia to China
-        { source: 2, target: 8, value: 3000 }, // Asia to South Korea
-        { source: 3, target: 9, value: 10000 }, // USA to High
-        { source: 4, target: 9, value: 8000 }, // Italy to High
-        { source: 5, target: 10, value: 6000 }, // Spain to Medium
-        { source: 6, target: 10, value: 4000 }, // Germany to Medium
-        { source: 7, target: 9, value: 50000 }, // China to High
-        { source: 8, target: 11, value: 3000 } // South Korea to Low
-    ]
-};
-*/
-
 async function initDashboard(_data, _dimensions, objArr) {
 
     console.log("Initializing Dashboard with dimensions: ", _dimensions);
@@ -341,7 +308,7 @@ function populateHeatmapDropdowns(dimensions) {
 }
 
 function renderHeatmap() {
-    const margin = { top: 50, right: 200, bottom: 300, left: 50 };
+    const margin = { top: 50, right: 200, bottom: 300, left: 100 };
     const width = 800 - margin.left - margin.right;
     const height = 800 - margin.top - margin.bottom;
 
@@ -385,8 +352,8 @@ function renderHeatmap() {
     const maxValue = d3.max(objArr, d => d[valueColumn]);
     const minValue = d3.min(objArr, d => d[valueColumn]);
     const colorScale = d3.scaleSequential()
-        .interpolator(d3.interpolateRdYlBu)
-        .domain([minValue, maxValue]);
+        .interpolator(d3.interpolateRdYlGn)
+        .domain([maxValue, minValue]);  // Note the reversed order to get green for low values and red for high values
 
     const rects = svg.selectAll()
         .data(objArr, d => d[xColumn] + ':' + d[yColumn])
