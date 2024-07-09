@@ -78,7 +78,7 @@ function init() {
             // TODO: parse reader.result data and call the init functions with the parsed data!
             initVis(fileInput.files[0]);
             // TODO: possible place to call the dashboard file for Part 2
-            initDashboard(fileInput.files[0]);
+
         };
         reader.readAsBinaryString(fileInput.files[0]);
     };
@@ -105,6 +105,7 @@ async function initVis(_data){
             });
             // Moved radarChart function to have access to dimensions
 
+    initDashboard(null, dimensions, objArr);
 
     // y scalings for scatterplot
     // TODO: set y domain for each dimension
@@ -177,7 +178,7 @@ function CreateDataTable(_data) {
 
 }
 function renderScatterplot(){
-    console.log(dimensions);
+
     // TODO: get domain names from menu and label x- and y-axis
     const x_attribute = readMenu(channels[0]);
     const y_attribute = readMenu(channels[1]);
