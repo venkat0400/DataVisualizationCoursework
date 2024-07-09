@@ -115,7 +115,7 @@ function createChart1(){
         // Create a color scale
         const color = d3.scaleOrdinal()
             .domain(data.map(d => d["WHORegion"]))
-            .range(d3.schemePaired.slice(0, 6));
+            .range(d3.schemeCategory10.slice(0,6));
 
         // Add a scale for bubble size
         const valueExtent = d3.extent(data, d => +d[attribute]);
