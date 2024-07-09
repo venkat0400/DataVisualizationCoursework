@@ -100,7 +100,7 @@ function createChart1(){
 
     Promise.all([
         d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"),
-        d3.csv("country_wise_latest_with_lat_lon.csv") // Update with your actual path
+        d3.csv("covid19.csv") // Update with your actual path
     ]).then(function (initialize) {
         let dataGeo = initialize[0];
         let data = initialize[1];
@@ -219,7 +219,7 @@ function createChart2() {
 
 
     function updateChart(attribute) {
-        d3.csv("country_wise_latest_with_lat_lon.csv").then(function(data) {
+        d3.csv("covid19.csv").then(function(data) {
             // Filter the top 10 countries by the selected attribute
             data = data.sort((a, b) => d3.descending(+a[attribute], +b[attribute])).slice(0, 10);
 
