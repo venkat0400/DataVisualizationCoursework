@@ -381,7 +381,7 @@ function constructSankeyData(source, middle, target, value, data) {
 function renderSankeyDiagram(data) {
     const container = d3.select("#sankey");
     const width = container.node().getBoundingClientRect().width;
-    const height = 800;
+    const height = 1500;
 
     const svg = container.html("").append("svg")
         .attr("width", width)
@@ -392,19 +392,23 @@ function renderSankeyDiagram(data) {
         .append("g");
 
     const sankey = d3.sankey()
-        .nodeWidth(100)  // Slightly increase node width
-        .nodePadding(20)  // Increase node padding to avoid overlap
+        .nodeWidth(100)
+        .nodePadding(30)
         .extent([[1, 1], [width - 1, height - 6]]);
 
     const graph = sankey(data);
-    
-    // Adjust the node height dynamically based on text length
-    const minHeight = 50;
+
+    // Ensure a minimum node height for readability
+    const minNodeHeight = 50;
     graph.nodes.forEach(node => {
-        const textLength = node.name.length;
-        node.y1 = node.y0 + Math.max(minHeight, textLength * 5);
+        const nodeHeight = node.y1 - node.y0;
+        if (nodeHeight < minNodeHeight) {
+            const extraHeight = minNodeHeight - nodeHeight;
+            node.y1 += extraHeight / 2;
+            node.y0 -= extraHeight / 2;
+        }
     });
-    
+
     sankey.update(graph);
 
     // Draw the nodes
@@ -418,13 +422,15 @@ function renderSankeyDiagram(data) {
         .attr("width", d => d.x1 - d.x0)
         .attr("fill", d => d.color || "green")
         .attr("stroke", "#000")
+        .attr("id", d => `node-${d.index}`)
         .on("mouseover", function(event, d) {
             d3.select(this).attr("stroke", "red").attr("stroke-width", 3);
-            highlightHeatmap(d.name);
+            highlightNodeAndLinks(d, graph.links, true);
         })
         .on("mouseout", function(event, d) {
-            d3.select(this).attr("stroke", "#000").attr("stroke-width", 1);
+            d3.select(this).attr("stroke", "#999").attr("stroke-width", 1);
             resetHeatmapHighlight();
+            highlightNodeAndLinks(d, graph.links, false);
         })
         .on("click", function(event, d) {
             filterHeatmap(d.name);
@@ -437,13 +443,15 @@ function renderSankeyDiagram(data) {
         .selectAll("text")
         .data(graph.nodes)
         .enter().append("text")
-        .attr("x", d => d.x0 + 5)  // Adjust x position to be inside the node
-        .attr("y", d => (d.y1 + d.y0) / 2)
+        .attr("x", d => (d.x0 + d.x1) / 2)
+        .attr("y", d => (d.y0 + d.y1) / 2)
         .attr("dy", "0.35em")
-        .attr("text-anchor", "start")
-        .style("font-size", "10px")  // Adjust font size as needed
-        .style("fill", "black")  // Change text color to black for better visibility
-        .text(d => d.name);
+        .attr("text-anchor", "middle")
+        .attr("alignment-baseline", "middle")
+        .style("font-size", "14px")
+        .style("fill", "black")
+        .text(d => d.name)
+        .each(wrapText);
 
     // Add links
     const links = svg.append("g")
@@ -453,15 +461,14 @@ function renderSankeyDiagram(data) {
         .data(graph.links)
         .enter().append("path")
         .attr("d", d3.sankeyLinkHorizontal())
+        .attr("id", d => `link-${d.index}`)
         .attr("stroke", "#999")
         .attr("stroke-width", d => Math.max(1, d.width))
         .on("mouseover", function(event, d) {
-            d3.select(this).attr("stroke", "red").attr("stroke-width", d => Math.max(1, d.width));
-            highlightHeatmap(d.source.name);
+            highlightNodeAndLinks(d.source, graph.links, true);
         })
         .on("mouseout", function(event, d) {
-            d3.select(this).attr("stroke", "#999").attr("stroke-width", d => Math.max(1, d.width));
-            resetHeatmapHighlight();
+            highlightNodeAndLinks(d.source, graph.links, false);
         })
         .on("click", function(event, d) {
             filterHeatmap(d.source.name);
@@ -474,6 +481,47 @@ function renderSankeyDiagram(data) {
         });
 }
 
+function highlightNodeAndLinks(node, links, highlight) {
+    const color = highlight ? "red" : "#999";
+    const strokeOpacity = highlight ? 1 : 0.5;
+
+    d3.select(`#node-${node.index}`)
+        .attr("stroke", color)
+        .attr("stroke-width", 3);
+
+    links.forEach(link => {
+        if (link.source === node || link.target === node) {
+            d3.select(`#link-${link.index}`)
+                .attr("stroke", color)
+                .attr("stroke-opacity", strokeOpacity)
+                .attr("stroke-width", link.width);
+        }
+    });
+}
+
+function wrapText(d) {
+    const text = d3.select(this);
+    const width = d.x1 - d.x0;
+    const words = d.name.split(/\s+/).reverse();
+    let word,
+        line = [],
+        lineNumber = 0,
+        lineHeight = 1.1,
+        y = text.attr("y"),
+        dy = parseFloat(text.attr("dy")),
+        tspan = text.text(null).append("tspan").attr("x", text.attr("x")).attr("y", y).attr("dy", dy + "em");
+    
+    while (word = words.pop()) {
+        line.push(word);
+        tspan.text(line.join(" "));
+        if (tspan.node().getComputedTextLength() > width) {
+            line.pop();
+            tspan.text(line.join(" "));
+            line = [word];
+            tspan = text.append("tspan").attr("x", text.attr("x")).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+        }
+    }
+}
 
 function filterTopCountriesByRegion(data, regionColumn, countryColumn, valueColumn, topN = 5) {
     const groupedData = d3.groups(data, d => d[regionColumn]);
