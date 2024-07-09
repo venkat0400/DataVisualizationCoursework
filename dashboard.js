@@ -21,13 +21,13 @@ async function initDashboard(_data, _dimensions, objArr) {
 
     // TODO: Initialize the environment (SVG, etc.) and call the nedded methods
     populateSankeyDropdowns(_dimensions);
-    
+
     // Event listeners for changes in Sankey dropdown
     document.getElementById("sankeySource").addEventListener("change", createChart3);
     document.getElementById("sankeyMiddle").addEventListener("change", createChart3);
     document.getElementById("sankeyTarget").addEventListener("change", createChart3);
     document.getElementById("sankeyValue").addEventListener("change", createChart3);
-    
+
     // Event listener for Heatmap
     document.getElementById('update-heatmap').addEventListener('click', () => {
         const xColumn = document.getElementById('x-axis').value;
@@ -53,7 +53,7 @@ async function initDashboard(_data, _dimensions, objArr) {
 
 
     //  SVG container
-    chart_sankey = d3.select("#sankey").append("svg")
+    chart3 = d3.select("#chart3").append("svg")
         .attr("width", width)
         .attr("height", height)
         .append("g");
@@ -65,9 +65,16 @@ async function initDashboard(_data, _dimensions, objArr) {
         .attr("height", height)
         .append("g");
 
+    document.getElementById('bubbleAttribute').addEventListener('change', function(){
+        createChart1();
+        createChart2();
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        createChart1();
+        createChart2();
 
-    createChart1();
-    createChart2();
+    });
+
     createChart3();
     createChart4();
 
@@ -75,11 +82,199 @@ async function initDashboard(_data, _dimensions, objArr) {
 }
 
 function createChart1(){
+    const svgContainer = d3.select("#chart1");
+    const containerWidth = svgContainer.node().getBoundingClientRect().width;
+    const containerHeight = svgContainer.node().getBoundingClientRect().height;
 
+    const svg = svgContainer.select("svg")
+        .attr("width", containerWidth)
+        .attr("height", containerHeight);
+
+    const projection = d3.geoMercator()
+        .center([0, 20])
+        .scale(99)
+        .translate([containerWidth / 2, containerHeight / 2]);
+
+    // Get the selected attribute
+    const attribute = document.getElementById('bubbleAttribute').value;
+
+    Promise.all([
+        d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"),
+        d3.csv("country_wise_latest_with_lat_lon.csv") // Update with your actual path
+    ]).then(function (initialize) {
+        let dataGeo = initialize[0];
+        let data = initialize[1];
+
+        // Clear previous elements
+        svg.selectAll("*").remove();
+
+        // Create a color scale
+        const color = d3.scaleOrdinal()
+            .domain(data.map(d => d["WHORegion"]))
+            .range(d3.schemePaired.slice(0, 6));
+
+        // Add a scale for bubble size
+        const valueExtent = d3.extent(data, d => +d[attribute]);
+        const size = d3.scaleSqrt()
+            .domain(valueExtent)
+            .range([1, 50]);
+
+        // Draw the map
+        svg.append("g")
+            .selectAll("path")
+            .data(dataGeo.features)
+            .join("path")
+            .attr("fill", "#b8b8b8")
+            .attr("d", d3.geoPath().projection(projection))
+            .style("stroke", "none")
+            .style("opacity", .3);
+
+        // Tooltip
+        const tooltip = svgContainer.append("div")
+            .style("position", "absolute")
+            .style("visibility", "hidden")
+            .style("background", "#f4f4f4")
+            .style("border", "1px solid #d4d4d4")
+            .style("padding", "5px")
+            .style("border-radius", "5px");
+
+        // Add circles
+        svg.selectAll("myCircles")
+            .data(data)
+            .join("circle")
+            .attr("cx", d => projection([+d.longitude, +d.latitude])[0])
+            .attr("cy", d => projection([+d.longitude, +d.latitude])[1])
+            .attr("r", d => size(+d[attribute]))
+            .style("fill", d => color(d["WHORegion"]))
+            .attr("stroke", d => (d[attribute] > 2000) ? "black" : "none")
+            .attr("stroke-width", 1)
+            .attr("fill-opacity", .4)
+            .on("mouseover", function(event, d) {
+                tooltip.style("visibility", "visible")
+                    .html(`Country: ${d.Country}<br>Value: ${d[attribute]}`);
+                d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
+            })
+            .on("mousemove", function(event) {
+                tooltip.style("top", (event.pageY - 10) + "px")
+                    .style("left", (event.pageX + 10) + "px");
+            })
+            .on("mouseout", function() {
+                tooltip.style("visibility", "hidden");
+                d3.select(this).attr("stroke", d => (d[attribute] > 2000) ? "black" : "none").attr("stroke-width", 1);
+            });
+
+        // Add title and explanation
+        svg.append("text")
+            .attr("text-anchor", "end")
+            .style("fill", "black")
+            .attr("x", containerWidth - 10)
+            .attr("y", containerHeight - 30)
+            .attr("width", 90)
+            .style("font-size", 14)
+            .text("Covid Cases Statistics");
+
+        // Add legend: circles
+        const valuesToShow = [100, 4000, 15000];
+        const xCircle = 40;
+        const xLabel = 90;
+        svg.selectAll("legend")
+            .data(valuesToShow)
+            .join("circle")
+            .attr("cx", xCircle)
+            .attr("cy", d => containerHeight - size(d))
+            .attr("r", d => size(d))
+            .style("fill", "none")
+            .attr("stroke", "black");
+
+        // Add legend: segments
+        svg.selectAll("legend")
+            .data(valuesToShow)
+            .join("line")
+            .attr('x1', d => xCircle + size(d))
+            .attr('x2', xLabel)
+            .attr('y1', d => containerHeight - size(d))
+            .attr('y2', d => containerHeight - size(d))
+            .attr('stroke', 'black')
+            .style('stroke-dasharray', ('2,2'));
+
+        // Add legend: labels
+        svg.selectAll("legend")
+            .data(valuesToShow)
+            .join("text")
+            .attr('x', xLabel)
+            .attr('y', d => containerHeight - size(d))
+            .text(d => d)
+            .style("font-size", 10)
+            .attr('alignment-baseline', 'middle');
+    });
 }
 
-function createChart2(){
+function createChart2() {
+    const margin = {top: 20, right: 30, bottom: 90, left: 90},
+        width = 700 - margin.left - margin.right,
+        height = 550 - margin.top - margin.bottom;
+    let attribute = document.getElementById('bubbleAttribute').value;
+    const svg = d3.select("#chart2 svg g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
 
+
+    function updateChart(attribute) {
+        d3.csv("country_wise_latest_with_lat_lon.csv").then(function(data) {
+            // Filter the top 10 countries by the selected attribute
+            data = data.sort((a, b) => d3.descending(+a[attribute], +b[attribute])).slice(0, 10);
+
+            // Clear previous elements
+            svg.selectAll("*").remove();
+
+            // X axis
+            const x = d3.scaleBand()
+                .range([0, width])
+                .domain(data.map(d => d["Country"]))
+                .padding(0.2);
+
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x))
+                .selectAll("text")
+                .attr("transform", "translate(-10,0)rotate(-45)")
+                .style("text-anchor", "end");
+
+            // Y axis
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(data, d => +d[attribute])])
+                .range([height, 0]);
+
+            svg.append("g")
+                .call(d3.axisLeft(y));
+
+            // Bars
+            svg.selectAll("mybar")
+                .data(data)
+                .join("rect")
+                .attr("x", d => x(d["Country"]))
+                .attr("width", x.bandwidth())
+                .attr("fill", "#69b3a2")
+                // No bar at the beginning thus:
+                .attr("height", d => height - y(0)) // always equal to 0
+                .attr("y", d => y(0))
+                .transition()
+                .duration(800)
+                .attr("y", d => y(+d[attribute]))
+                .attr("height", d => height - y(+d[attribute]))
+                .delay((d,i) => i * 100);
+        });
+    }
+
+    // Initialize with default attribute
+    updateChart(attribute);
+    // Event listeners for button clicks to update data
+    document.getElementById("variable1").addEventListener("click", function() {
+        updateChart("Confirmed");
+    });
+
+    document.getElementById("variable2").addEventListener("click", function() {
+        updateChart("Deaths");
+    });
 }
 
 function createChart3(){
@@ -87,9 +282,9 @@ function createChart3(){
     const middle = document.getElementById("sankeyMiddle").value;
     const target = document.getElementById("sankeyTarget").value;
     const value = document.getElementById("sankeyValue").value;
-    
+
     const sankeyData = constructSankeyData(source, middle, target, value, objArr);
-    
+
     renderSankeyDiagram(sankeyData);
 }
 
@@ -114,7 +309,7 @@ function populateSankeyDropdowns(dimensions) {
     const middleSelect = document.getElementById("sankeyMiddle");
     const targetSelect = document.getElementById("sankeyTarget");
     const valueSelect = document.getElementById("sankeyValue");
-    
+
     // Clear previous options
     sourceSelect.innerHTML = '';
     middleSelect.innerHTML = '';
@@ -259,15 +454,15 @@ function renderSankeyDiagram(data) {
         .text(d => {
             const sourceNode = graph.nodes[d.source.index];
             const targetNode = graph.nodes[d.target.index];
-            
+
             // Determine if this is a middle-to-end link
         const isMiddleToEndLink = targetNode.layer === 2; // assuming layers are 0 (source), 1 (middle), 2 (end)
-        
+
         if (isMiddleToEndLink) {
             // Find the original source node
             const originalSourceLink = graph.links.find(link => link.target.index === sourceNode.index);
             const originalSourceNode = graph.nodes[originalSourceLink.source.index];
-            
+
             return `${originalSourceNode.name} → ${sourceNode.name} → ${targetNode.name}\n${d.value}`;
         } else {
             return `${sourceNode.name} → ${targetNode.name}\n${d.value}`;

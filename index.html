@@ -17,6 +17,7 @@
 
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <link rel="stylesheet" type="text/css" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
     <!-- include d3 -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -98,25 +99,48 @@
             </div>
         </div>
     </div>
+
 </div>
 
 <!-- Tab 3 -->
 <div id="Dashboard" class="tabcontent">
+    <h1>Dashboard Example</h1>
+
+    <!-- TODO: The environment of your dashboard can be freely customized. Here is a general layout to get you started. -->
 
     <!-- Grid container -->
     <div class="dashboardGrid">
-        <!-- First row: Chart 1 and Chart 2 -->
-        <div class="row">
-            <div class="container">
-                <h2>Chart 1</h2>
-                <h4>Data representation 1.</h4>
-                <div id="chart1"></div>
-            </div>
-            <div class="container">
-                <h2>Chart 2</h2>
-                <h4>Data representation 2.</h4>
-                <div id="chart2"></div>
-            </div>
+
+        <!-- chart 1 -->
+        <div class="container">
+           <h2>Chart 1</h2>
+			<h4>Bubble Map Representation</h4>
+            <label for="bubbleAttribute">Select Attribute:</label>
+            <select id="bubbleAttribute">
+                <option value="Confirmed">Confirmed</option>
+                <option value="Deaths">Deaths</option>
+                <option value="Recovered">Recovered</option>
+                <option value="Active">Active</option>
+                <option value="New cases">New cases</option>
+                <option value="New deaths">New deaths</option>
+                <option value="New recovered">New recovered</option>
+                <option value="Deaths / 100 Cases">Deaths / 100 Cases</option>
+                <option value="Recovered / 100 Cases">Recovered / 100 Cases</option>
+                <option value="Deaths / 100 Recovered">Deaths / 100 Recovered</option>
+                <option value="Confirmed last week">Confirmed last week</option>
+                <option value="1 week change">1 week change</option>
+                <option value="1 week % increase">1 week % increase</option>
+            </select>
+            <!-- radar chart SVG -->
+            <div id="chart1"></div>
+        </div>
+
+        <!-- chart 2 -->
+        <div class="container">
+           <h2>Chart 2</h2>
+			 <h4>Bar Chart Represenation</h4>
+            <!-- radar chart SVG -->
+            <div id="chart2"></div>
         </div>
         <!-- Second row: Sankey Diagram and Heat Map -->
         <div class="row">
@@ -155,8 +179,11 @@
                 <div class="tooltip" id="tooltip" style="display: none;"></div>
             </div>
         </div>
+
     </div>
+
 </div>
+
 
 </body>
 </html>
