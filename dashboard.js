@@ -82,12 +82,18 @@ async function initDashboard(_data, _dimensions, objArr) {
 }
 
 function createChart1(){
-    const svg = d3.select("#chart1 svg");
+    const svgContainer = d3.select("#chart1");
+    const containerWidth = svgContainer.node().getBoundingClientRect().width;
+    const containerHeight = svgContainer.node().getBoundingClientRect().height;
+
+    const svg = svgContainer.select("svg")
+        .attr("width", containerWidth)
+        .attr("height", containerHeight);
 
     const projection = d3.geoMercator()
-        .center([0, 20])                // GPS of location to zoom on
-        .scale(99)                      // This is like the zoom
-        .translate([width / 2, height / 2]);
+        .center([0, 20])
+        .scale(99)
+        .translate([containerWidth / 2, containerHeight / 2]);
 
     // Get the selected attribute
     const attribute = document.getElementById('bubbleAttribute').value;
@@ -104,14 +110,14 @@ function createChart1(){
 
         // Create a color scale
         const color = d3.scaleOrdinal()
-            .domain(data.map(d => d["WHORegion"])) // Adjust if needed
-            .range(d3.schemePaired.slice(0,6));
+            .domain(data.map(d => d["WHORegion"]))
+            .range(d3.schemePaired.slice(0, 6));
 
         // Add a scale for bubble size
         const valueExtent = d3.extent(data, d => +d[attribute]);
         const size = d3.scaleSqrt()
-            .domain(valueExtent)  // What's in the data
-            .range([1, 50]);  // Size in pixel
+            .domain(valueExtent)
+            .range([1, 50]);
 
         // Draw the map
         svg.append("g")
@@ -122,9 +128,9 @@ function createChart1(){
             .attr("d", d3.geoPath().projection(projection))
             .style("stroke", "none")
             .style("opacity", .3);
-        //tooltip added
-        const tooltip = d3.select("#chart1")
-            .append("div")
+
+        // Tooltip
+        const tooltip = svgContainer.append("div")
             .style("position", "absolute")
             .style("visibility", "hidden")
             .style("background", "#f4f4f4")
@@ -132,16 +138,15 @@ function createChart1(){
             .style("padding", "5px")
             .style("border-radius", "5px");
 
-
-        // Add circles:
+        // Add circles
         svg.selectAll("myCircles")
             .data(data)
             .join("circle")
             .attr("cx", d => projection([+d.longitude, +d.latitude])[0])
             .attr("cy", d => projection([+d.longitude, +d.latitude])[1])
             .attr("r", d => size(+d[attribute]))
-            .style("fill", d => color(d["WHORegion"])) // Adjust if needed
-            .attr("stroke", d => { if (d[attribute] > 2000) { return "black"; } else { return "none"; } })
+            .style("fill", d => color(d["WHORegion"]))
+            .attr("stroke", d => (d[attribute] > 2000) ? "black" : "none")
             .attr("stroke-width", 1)
             .attr("fill-opacity", .4)
             .on("mouseover", function(event, d) {
@@ -155,17 +160,15 @@ function createChart1(){
             })
             .on("mouseout", function() {
                 tooltip.style("visibility", "hidden");
-                d3.select(this).attr("stroke", d => { if (d[attribute] > 2000) { return "black"; } else { return "none"; } }).attr("stroke-width", 1);
+                d3.select(this).attr("stroke", d => (d[attribute] > 2000) ? "black" : "none").attr("stroke-width", 1);
             });
-
-
 
         // Add title and explanation
         svg.append("text")
             .attr("text-anchor", "end")
             .style("fill", "black")
-            .attr("x", width - 10)
-            .attr("y", height - 30)
+            .attr("x", containerWidth - 10)
+            .attr("y", containerHeight - 30)
             .attr("width", 90)
             .style("font-size", 14)
             .text("Covid Cases Statistics");
@@ -178,7 +181,7 @@ function createChart1(){
             .data(valuesToShow)
             .join("circle")
             .attr("cx", xCircle)
-            .attr("cy", d => height - size(d))
+            .attr("cy", d => containerHeight - size(d))
             .attr("r", d => size(d))
             .style("fill", "none")
             .attr("stroke", "black");
@@ -189,8 +192,8 @@ function createChart1(){
             .join("line")
             .attr('x1', d => xCircle + size(d))
             .attr('x2', xLabel)
-            .attr('y1', d => height - size(d))
-            .attr('y2', d => height - size(d))
+            .attr('y1', d => containerHeight - size(d))
+            .attr('y2', d => containerHeight - size(d))
             .attr('stroke', 'black')
             .style('stroke-dasharray', ('2,2'));
 
@@ -199,7 +202,7 @@ function createChart1(){
             .data(valuesToShow)
             .join("text")
             .attr('x', xLabel)
-            .attr('y', d => height - size(d))
+            .attr('y', d => containerHeight - size(d))
             .text(d => d)
             .style("font-size", 10)
             .attr('alignment-baseline', 'middle');
