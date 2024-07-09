@@ -88,7 +88,11 @@ function createChart1(){
 
     const svg = svgContainer.select("svg")
         .attr("width", containerWidth)
-        .attr("height", containerHeight);
+        .attr("height", containerHeight)
+        .call(d3.zoom().on("zoom", function(event) {
+            svg.attr("transform", event.transform);
+        }))
+        .append("g");
 
     const projection = d3.geoMercator()
         .center([0, 20])
