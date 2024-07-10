@@ -158,6 +158,9 @@ function createChart1(){
                     .duration(500)
                     .style("opacity", 0);
                 d3.select(this).attr("stroke", d => (d[attribute] > 2000) ? "black" : "none").attr("stroke-width", 1);
+            })
+            .on("click", function(event, d) {
+                createChart2(d.Country);
             });
 
         svg.append("text")
@@ -202,7 +205,7 @@ function createChart1(){
     });
 }
 
-function createChart2() {
+function createChart2(selectedCountry) {
     const margin = {top: 20, right: 30, bottom: 90, left: 90},
         width = 700 - margin.left - margin.right,
         height = 550 - margin.top - margin.bottom;
@@ -210,11 +213,20 @@ function createChart2() {
     const svg = d3.select("#chart2 svg g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-
-    function updateChart(attribute) {
+    function updateChart(attribute, selectedCountry) {
         d3.csv("country_wise_latest_with_lat_lon.csv").then(function(data) {
-            // Filter the top 10 countries by the selected attribute
-            data = data.sort((a, b) => d3.descending(+a[attribute], +b[attribute])).slice(0, 10);
+            // Sort data by the selected attribute
+            data = data.sort((a, b) => d3.descending(+a[attribute], +b[attribute]));
+
+            // Find the index of the selected country
+            let selectedIndex = data.findIndex(d => d.Country === selectedCountry);
+
+            // Get the countries around the selected country
+            let start = Math.max(0, selectedIndex - 4);
+            let end = Math.min(data.length, selectedIndex + 5);
+
+            // Filter the data to get the required countries
+            data = data.slice(start, end);
 
             // Clear previous elements
             svg.selectAll("*").remove();
@@ -247,7 +259,6 @@ function createChart2() {
                 .attr("x", d => x(d["Country"]))
                 .attr("width", x.bandwidth())
                 .attr("fill", "#69b3a2")
-                // No bar at the beginning thus:
                 .attr("height", d => height - y(0)) // always equal to 0
                 .attr("y", d => y(0))
                 .transition()
@@ -259,7 +270,7 @@ function createChart2() {
     }
 
     // Initialize with default attribute
-    updateChart(attribute);
+    updateChart(attribute, selectedCountry);
 }
 
 function createChart3(){
