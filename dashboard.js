@@ -434,11 +434,11 @@ function renderSankeyDiagram(data) {
             } else if (d.layer === 1) {
                 return regionColorMap[graph.links.find(link => link.target.index === d.index).source.name];
             } else if (d.name === "High") {
-                return "red";
+                return "pink";
             } else if (d.name === "Medium") {
                 return "yellow";
             } else if (d.name === "Low") {
-                return "green";
+                return "cyan";
             }
             return "green";
         })
@@ -514,9 +514,9 @@ function highlightNodeAndLinks(node, links, highlight) {
             d3.select(`#link-${link.index}`)
                 .attr("stroke", d => {
                     if (highlight) {
-                        if (d.target.name === "High") return "red";
+                        if (d.target.name === "High") return "pink";
                         else if (d.target.name === "Medium") return "yellow";
-                        else if (d.target.name === "Low") return "green";
+                        else if (d.target.name === "Low") return "cyan";
                     }
                     return "#999";
                 })
