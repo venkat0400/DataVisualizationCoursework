@@ -86,16 +86,21 @@ function createChart1(){
     const containerWidth = svgContainer.node().getBoundingClientRect().width;
     const containerHeight = svgContainer.node().getBoundingClientRect().height;
 
-    const svg = svgContainer.select("svg")
+    svgContainer.selectAll("svg").remove(); // Clear previous SVG elements
+
+    const svg = svgContainer.append("svg")
         .attr("width", containerWidth)
-        .attr("height", containerHeight);
+        .attr("height", containerHeight)
+        .call(d3.zoom().on("zoom", function(event) {
+            svg.attr("transform", event.transform);
+        }))
+        .append("g");
 
     const projection = d3.geoMercator()
         .center([0, 20])
         .scale(99)
         .translate([containerWidth / 2, containerHeight / 2]);
 
-    // Get the selected attribute
     const attribute = document.getElementById('bubbleAttribute').value;
 
     Promise.all([
@@ -411,6 +416,14 @@ function renderSankeyDiagram(data) {
 
     sankey.update(graph);
 
+    // Color scale for WHO regions
+    const color = d3.scaleOrdinal()
+        .domain(graph.nodes.filter(d => d.layer === 0).map(d => d.name))
+        .range(d3.schemePaired.slice(0, 6));
+
+    // Map to store region colors for middle nodes
+    const regionColorMap = {};
+
     // Draw the nodes
     const nodes = svg.append("g")
         .selectAll("rect")
@@ -420,7 +433,22 @@ function renderSankeyDiagram(data) {
         .attr("y", d => d.y0)
         .attr("height", d => d.y1 - d.y0)
         .attr("width", d => d.x1 - d.x0)
-        .attr("fill", d => d.color || "green")
+        .attr("fill", d => {
+            if (d.layer === 0) {
+                const regionColor = color(d.name);
+                regionColorMap[d.name] = regionColor;
+                return regionColor;
+            } else if (d.layer === 1) {
+                return regionColorMap[graph.links.find(link => link.target.index === d.index).source.name];
+            } else if (d.name === "High") {
+                return "red";
+            } else if (d.name === "Medium") {
+                return "yellow";
+            } else if (d.name === "Low") {
+                return "green";
+            }
+            return "green";
+        })
         .attr("stroke", "#000")
         .attr("id", d => `node-${d.index}`)
         .on("mouseover", function(event, d) {
@@ -429,7 +457,6 @@ function renderSankeyDiagram(data) {
         })
         .on("mouseout", function(event, d) {
             d3.select(this).attr("stroke", "#999").attr("stroke-width", 1);
-            resetHeatmapHighlight();
             highlightNodeAndLinks(d, graph.links, false);
         })
         .on("click", function(event, d) {
@@ -453,7 +480,7 @@ function renderSankeyDiagram(data) {
         .text(d => d.name)
         .each(wrapText);
 
-    // Add links
+    // Draw the links
     const links = svg.append("g")
         .attr("fill", "none")
         .attr("stroke-opacity", 0.5)
@@ -492,7 +519,14 @@ function highlightNodeAndLinks(node, links, highlight) {
     links.forEach(link => {
         if (link.source === node || link.target === node) {
             d3.select(`#link-${link.index}`)
-                .attr("stroke", color)
+                .attr("stroke", d => {
+                    if (highlight) {
+                        if (d.target.name === "High") return "red";
+                        else if (d.target.name === "Medium") return "yellow";
+                        else if (d.target.name === "Low") return "green";
+                    }
+                    return "#999";
+                })
                 .attr("stroke-opacity", strokeOpacity)
                 .attr("stroke-width", link.width);
         }
@@ -522,6 +556,7 @@ function wrapText(d) {
         }
     }
 }
+
 
 function filterTopCountriesByRegion(data, regionColumn, countryColumn, valueColumn, topN = 5) {
     const groupedData = d3.groups(data, d => d[regionColumn]);
