@@ -105,7 +105,7 @@ function createChart1(){
 
     Promise.all([
         d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"),
-        d3.csv("country_wise_latest_with_lat_lon.csv")
+        d3.csv("covid19.csv") // Update with your actual path
     ]).then(function (initialize) {
         let dataGeo = initialize[0];
         let data = initialize[1];
@@ -212,7 +212,7 @@ function createChart2() {
 
 
     function updateChart(attribute) {
-        d3.csv("country_wise_latest_with_lat_lon.csv").then(function(data) {
+        d3.csv("covid19.csv").then(function(data) {
             // Filter the top 10 countries by the selected attribute
             data = data.sort((a, b) => d3.descending(+a[attribute], +b[attribute])).slice(0, 10);
 
@@ -314,7 +314,8 @@ function populateSankeyDropdowns(dimensions) {
 
 // Function to construct Data Structure for Sankey
 function constructSankeyData(source, middle, target, value, data) {
-    // Create an array to store nodes and a map to store the indices of the nodes
+    const filteredData = filterTopCountriesByRegion(data, source, middle, value);
+
     let nodes = [];
     let nodeMap = {};
 
@@ -326,37 +327,30 @@ function constructSankeyData(source, middle, target, value, data) {
         return nodeMap[name];
     }
 
-    // Extract unique values from each column
-    const uniqueSources = [...new Set(data.map(d => d[source]))];
-    const uniqueMiddles = [...new Set(data.map(d => d[middle]))];
-    const uniqueTargets = [...new Set(data.map(d => d[target]))];
+    const uniqueSources = [...new Set(filteredData.map(d => d[source]))];
+    const uniqueMiddles = [...new Set(filteredData.map(d => d[middle]))];
+    const uniqueTargets = [...new Set(filteredData.map(d => d[target]))];
 
-    // Add all unique nodes
     uniqueSources.forEach(addNode);
     uniqueMiddles.forEach(addNode);
     uniqueTargets.forEach(addNode);
 
-    // Create a map to store unique links
     let linksMap = {};
 
-    // Iterate through the dataset and populate links
-    data.forEach(d => {
+    filteredData.forEach(d => {
         let sourceIndex = addNode(d[source]);
         let middleIndex = addNode(d[middle]);
         let targetIndex = addNode(d[target]);
 
-        // Create unique keys for the links
         let sourceMiddleKey = `${sourceIndex}-${middleIndex}`;
         let middleTargetKey = `${middleIndex}-${targetIndex}`;
 
-        // Aggregate values for links from source to middle
         if (linksMap[sourceMiddleKey]) {
             linksMap[sourceMiddleKey].value += +d[value];
         } else {
             linksMap[sourceMiddleKey] = { source: sourceIndex, target: middleIndex, value: +d[value] };
         }
 
-        // Aggregate values for links from middle to target
         if (linksMap[middleTargetKey]) {
             linksMap[middleTargetKey].value += +d[value];
         } else {
@@ -364,22 +358,17 @@ function constructSankeyData(source, middle, target, value, data) {
         }
     });
 
-    // Convert linksMap to an array of links
     let links = Object.values(linksMap);
 
-    const sankeyData = { nodes: nodes, links: links };
-
-    // Log the sankeyData structure
-    console.log("Sankey Data Structure:", sankeyData);
-
-    return sankeyData;
+    return {nodes: nodes, links: links};
 }
 
 function renderSankeyDiagram(data) {
-    const width = 1000;
-    const height = 800;
+    const container = d3.select("#sankey");
+    const width = container.node().getBoundingClientRect().width;
+    const height = 1500;
 
-    const svg = d3.select("#sankey").html("").append("svg")
+    const svg = container.html("").append("svg")
         .attr("width", width)
         .attr("height", height)
         .call(d3.zoom().on("zoom", function(event) {
@@ -388,18 +377,35 @@ function renderSankeyDiagram(data) {
         .append("g");
 
     const sankey = d3.sankey()
-        .nodeWidth(20)
-        .nodePadding(20)
+        .nodeWidth(100)
+        .nodePadding(30)
         .extent([[1, 1], [width - 1, height - 6]]);
 
     const graph = sankey(data);
 
-    // Log node and link positions
-    console.log("Nodes:", graph.nodes);
-    console.log("Links:", graph.links);
+    // Ensure a minimum node height for readability
+    const minNodeHeight = 50;
+    graph.nodes.forEach(node => {
+        const nodeHeight = node.y1 - node.y0;
+        if (nodeHeight < minNodeHeight) {
+            const extraHeight = minNodeHeight - nodeHeight;
+            node.y1 += extraHeight / 2;
+            node.y0 -= extraHeight / 2;
+        }
+    });
+
+    sankey.update(graph);
+
+    // Color scale for WHO regions
+    const color = d3.scaleOrdinal()
+        .domain(graph.nodes.filter(d => d.layer === 0).map(d => d.name))
+        .range(d3.schemePaired.slice(0, 6));
+
+    // Map to store region colors for middle nodes
+    const regionColorMap = {};
 
     // Draw the nodes
-    svg.append("g")
+    const nodes = svg.append("g")
         .selectAll("rect")
         .data(graph.nodes)
         .enter().append("rect")
@@ -407,8 +413,35 @@ function renderSankeyDiagram(data) {
         .attr("y", d => d.y0)
         .attr("height", d => d.y1 - d.y0)
         .attr("width", d => d.x1 - d.x0)
-        .attr("fill", d => d.color || "green")
+        .attr("fill", d => {
+            if (d.layer === 0) {
+                const regionColor = color(d.name);
+                regionColorMap[d.name] = regionColor;
+                return regionColor;
+            } else if (d.layer === 1) {
+                return regionColorMap[graph.links.find(link => link.target.index === d.index).source.name];
+            } else if (d.name === "High") {
+                return "red";
+            } else if (d.name === "Medium") {
+                return "yellow";
+            } else if (d.name === "Low") {
+                return "green";
+            }
+            return "green";
+        })
         .attr("stroke", "#000")
+        .attr("id", d => `node-${d.index}`)
+        .on("mouseover", function(event, d) {
+            d3.select(this).attr("stroke", "red").attr("stroke-width", 3);
+            highlightNodeAndLinks(d, graph.links, true);
+        })
+        .on("mouseout", function(event, d) {
+            d3.select(this).attr("stroke", "#999").attr("stroke-width", 1);
+            highlightNodeAndLinks(d, graph.links, false);
+        })
+        .on("click", function(event, d) {
+            filterHeatmap(d.name);
+        })
         .append("title")
         .text(d => `${d.name}\n${d.value}`);
 
@@ -417,43 +450,104 @@ function renderSankeyDiagram(data) {
         .selectAll("text")
         .data(graph.nodes)
         .enter().append("text")
-        .attr("x", d => d.x0 + 5)
-        .attr("y", d => (d.y1 + d.y0) / 2)
+        .attr("x", d => (d.x0 + d.x1) / 2)
+        .attr("y", d => (d.y0 + d.y1) / 2)
         .attr("dy", "0.35em")
-        .attr("text-anchor", "start")
-        .style("font-size", "10px")
+        .attr("text-anchor", "middle")
+        .attr("alignment-baseline", "middle")
+        .style("font-size", "14px")
         .style("fill", "black")
-        .text(d => d.name);
+        .text(d => d.name)
+        .each(wrapText);
 
-    // Add links
-    svg.append("g")
+    // Draw the links
+    const links = svg.append("g")
         .attr("fill", "none")
         .attr("stroke-opacity", 0.5)
         .selectAll("path")
         .data(graph.links)
         .enter().append("path")
         .attr("d", d3.sankeyLinkHorizontal())
+        .attr("id", d => `link-${d.index}`)
         .attr("stroke", "#999")
         .attr("stroke-width", d => Math.max(1, d.width))
+        .on("mouseover", function(event, d) {
+            highlightNodeAndLinks(d.source, graph.links, true);
+        })
+        .on("mouseout", function(event, d) {
+            highlightNodeAndLinks(d.source, graph.links, false);
+        })
+        .on("click", function(event, d) {
+            filterHeatmap(d.source.name);
+        })
         .append("title")
         .text(d => {
             const sourceNode = graph.nodes[d.source.index];
             const targetNode = graph.nodes[d.target.index];
-
-            // Determine if this is a middle-to-end link
-        const isMiddleToEndLink = targetNode.layer === 2; // assuming layers are 0 (source), 1 (middle), 2 (end)
-
-        if (isMiddleToEndLink) {
-            // Find the original source node
-            const originalSourceLink = graph.links.find(link => link.target.index === sourceNode.index);
-            const originalSourceNode = graph.nodes[originalSourceLink.source.index];
-
-            return `${originalSourceNode.name} → ${sourceNode.name} → ${targetNode.name}\n${d.value}`;
-        } else {
             return `${sourceNode.name} → ${targetNode.name}\n${d.value}`;
-        }
         });
 }
+
+function highlightNodeAndLinks(node, links, highlight) {
+    const color = highlight ? "red" : "#999";
+    const strokeOpacity = highlight ? 1 : 0.5;
+
+    d3.select(`#node-${node.index}`)
+        .attr("stroke", color)
+        .attr("stroke-width", 3);
+
+    links.forEach(link => {
+        if (link.source === node || link.target === node) {
+            d3.select(`#link-${link.index}`)
+                .attr("stroke", d => {
+                    if (highlight) {
+                        if (d.target.name === "High") return "red";
+                        else if (d.target.name === "Medium") return "yellow";
+                        else if (d.target.name === "Low") return "green";
+                    }
+                    return "#999";
+                })
+                .attr("stroke-opacity", strokeOpacity)
+                .attr("stroke-width", link.width);
+        }
+    });
+}
+
+function wrapText(d) {
+    const text = d3.select(this);
+    const width = d.x1 - d.x0;
+    const words = d.name.split(/\s+/).reverse();
+    let word,
+        line = [],
+        lineNumber = 0,
+        lineHeight = 1.1,
+        y = text.attr("y"),
+        dy = parseFloat(text.attr("dy")),
+        tspan = text.text(null).append("tspan").attr("x", text.attr("x")).attr("y", y).attr("dy", dy + "em");
+    
+    while (word = words.pop()) {
+        line.push(word);
+        tspan.text(line.join(" "));
+        if (tspan.node().getComputedTextLength() > width) {
+            line.pop();
+            tspan.text(line.join(" "));
+            line = [word];
+            tspan = text.append("tspan").attr("x", text.attr("x")).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+        }
+    }
+}
+
+
+function filterTopCountriesByRegion(data, regionColumn, countryColumn, valueColumn, topN = 5) {
+    const groupedData = d3.groups(data, d => d[regionColumn]);
+
+    return groupedData.flatMap(([region, countries]) => {
+        return countries
+            .sort((a, b) => d3.descending(+a[valueColumn], +b[valueColumn]))
+            .slice(0, topN);
+    });
+}
+
 
 
 // ------------------------------------ End of Sankey Implementation ------------------------------ //
@@ -487,7 +581,7 @@ function populateHeatmapDropdowns(dimensions) {
     });
 }
 
-function renderHeatmap() {
+function renderHeatmap(data, xColumn, yColumn, valueColumn) {
     const margin = { top: 50, right: 200, bottom: 300, left: 100 };
     const width = 800 - margin.left - margin.right;
     const height = 800 - margin.top - margin.bottom;
@@ -503,14 +597,9 @@ function renderHeatmap() {
         .append("g")
         .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-    // Get selected values from dropdowns
-    const xColumn = d3.select("#x-axis").property("value");
-    const yColumn = d3.select("#y-axis").property("value");
-    const valueColumn = d3.select("#value").property("value");
-
     // Extract unique labels for x and y axes
-    const xLabels = [...new Set(objArr.map(d => d[xColumn]))];
-    const yLabels = [...new Set(objArr.map(d => d[yColumn]))];
+    const xLabels = [...new Set(data.map(d => d[xColumn]))];
+    const yLabels = [...new Set(data.map(d => d[yColumn]))];
 
     const x = d3.scaleBand()
         .range([0, width])
@@ -529,14 +618,14 @@ function renderHeatmap() {
     svg.append("g")
         .call(d3.axisLeft(y));
 
-    const maxValue = d3.max(objArr, d => d[valueColumn]);
-    const minValue = d3.min(objArr, d => d[valueColumn]);
+    const maxValue = d3.max(data, d => d[valueColumn]);
+    const minValue = d3.min(data, d => d[valueColumn]);
     const colorScale = d3.scaleSequential()
         .interpolator(d3.interpolateRdYlGn)
         .domain([maxValue, minValue]);  // Note the reversed order to get green for low values and red for high values
 
     const rects = svg.selectAll()
-        .data(objArr, d => d[xColumn] + ':' + d[yColumn])
+        .data(data, d => d[xColumn] + ':' + d[yColumn])
         .enter()
         .append("rect")
         .attr("x", d => x(d[xColumn]))
@@ -590,4 +679,19 @@ function renderHeatmap() {
         .call(legendAxis)
         .select(".domain")
         .remove();
+}
+
+function highlightHeatmap(region) {
+    d3.selectAll('.heatmap-cell')
+        .filter(d => d.region === region)
+        .classed('highlighted', true);
+}
+
+function resetHeatmapHighlight() {
+    d3.selectAll('.heatmap-cell').classed('highlighted', false);
+}
+
+function filterHeatmap(region) {
+    const filteredData = objArr.filter(d => d.WHORegion === region);
+    renderHeatmap(filteredData, 'WHORegion', 'StringencyCategory', 'Deaths');
 }
