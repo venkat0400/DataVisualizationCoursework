@@ -113,7 +113,7 @@ function createChart1(){
         svg.selectAll("*").remove();
 
         const color = d3.scaleOrdinal()
-            .domain(data.map(d => d["WHORegion"]))
+            .domain(data.map(d => d["WHO Region"]))
             .range(d3.schemeCategory10.slice(0,6));
 
         const valueExtent = d3.extent(data, d => +d[attribute]);
@@ -137,10 +137,10 @@ function createChart1(){
         svg.selectAll("myCircles")
             .data(data)
             .join("circle")
-            .attr("cx", d => projection([+d.longitude, +d.latitude])[0])
-            .attr("cy", d => projection([+d.longitude, +d.latitude])[1])
+            .attr("cx", d => projection([+d.Longitude, +d.Latitude])[0])
+            .attr("cy", d => projection([+d.Longitude, +d.Latitude])[1])
             .attr("r", d => size(+d[attribute]))
-            .style("fill", d => color(d["WHORegion"]))
+            .style("fill", d => color(d["WHO Region"]))
             .attr("stroke", d => (d[attribute] > 2000) ? "black" : "none")
             .attr("stroke-width", 1)
             .attr("fill-opacity", .4)
@@ -158,6 +158,9 @@ function createChart1(){
                     .duration(500)
                     .style("opacity", 0);
                 d3.select(this).attr("stroke", d => (d[attribute] > 2000) ? "black" : "none").attr("stroke-width", 1);
+            })
+            .on("click", function(event, d) {
+                createChart2(d.Country);
             });
 
         svg.append("text")
@@ -202,7 +205,7 @@ function createChart1(){
     });
 }
 
-function createChart2() {
+function createChart2(selectedCountry) {
     const margin = {top: 20, right: 30, bottom: 90, left: 90},
         width = 700 - margin.left - margin.right,
         height = 550 - margin.top - margin.bottom;
@@ -211,10 +214,20 @@ function createChart2() {
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
 
-    function updateChart(attribute) {
+    function updateChart(attribute, selectedCountry) {
         d3.csv("covid19.csv").then(function(data) {
-            // Filter the top 10 countries by the selected attribute
-            data = data.sort((a, b) => d3.descending(+a[attribute], +b[attribute])).slice(0, 10);
+            // Sort data by the selected attribute
+            data = data.sort((a, b) => d3.descending(+a[attribute], +b[attribute]));
+
+            // Find the index of the selected country
+            let selectedIndex = data.findIndex(d => d.Country === selectedCountry);
+
+            // Get the countries around the selected country
+            let start = Math.max(0, selectedIndex - 4);
+            let end = Math.min(data.length, selectedIndex + 5);
+
+            // Filter the data to get the required countries
+            data = data.slice(start, end);
 
             // Clear previous elements
             svg.selectAll("*").remove();
@@ -259,7 +272,7 @@ function createChart2() {
     }
 
     // Initialize with default attribute
-    updateChart(attribute);
+    updateChart(attribute, selectedCountry);
 }
 
 function createChart3(){
@@ -524,7 +537,7 @@ function wrapText(d) {
         y = text.attr("y"),
         dy = parseFloat(text.attr("dy")),
         tspan = text.text(null).append("tspan").attr("x", text.attr("x")).attr("y", y).attr("dy", dy + "em");
-    
+
     while (word = words.pop()) {
         line.push(word);
         tspan.text(line.join(" "));
