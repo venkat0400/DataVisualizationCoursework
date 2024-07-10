@@ -110,21 +110,17 @@ function createChart1(){
         let dataGeo = initialize[0];
         let data = initialize[1];
 
-        // Clear previous elements
         svg.selectAll("*").remove();
 
-        // Create a color scale
         const color = d3.scaleOrdinal()
             .domain(data.map(d => d["WHORegion"]))
-            .range(d3.schemePaired.slice(0, 6));
+            .range(d3.schemeCategory10.slice(0,6));
 
-        // Add a scale for bubble size
         const valueExtent = d3.extent(data, d => +d[attribute]);
         const size = d3.scaleSqrt()
             .domain(valueExtent)
             .range([1, 50]);
 
-        // Draw the map
         svg.append("g")
             .selectAll("path")
             .data(dataGeo.features)
@@ -134,16 +130,10 @@ function createChart1(){
             .style("stroke", "none")
             .style("opacity", .3);
 
-        // Tooltip
-        const tooltip = svgContainer.append("div")
-            .style("position", "absolute")
-            .style("visibility", "hidden")
-            .style("background", "#f4f4f4")
-            .style("border", "1px solid #d4d4d4")
-            .style("padding", "5px")
-            .style("border-radius", "5px");
+        const tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
 
-        // Add circles
         svg.selectAll("myCircles")
             .data(data)
             .join("circle")
@@ -155,20 +145,21 @@ function createChart1(){
             .attr("stroke-width", 1)
             .attr("fill-opacity", .4)
             .on("mouseover", function(event, d) {
-                tooltip.style("visibility", "visible")
-                    .html(`Country: ${d.Country}<br>Value: ${d[attribute]}`);
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+                tooltip.html(`Country: ${d.Country}<br>Value: ${d[attribute]}`)
+                    .style("left", (event.pageX + 5) + "px")
+                    .style("top", (event.pageY - 28) + "px");
                 d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
             })
-            .on("mousemove", function(event) {
-                tooltip.style("top", (event.pageY - 10) + "px")
-                    .style("left", (event.pageX + 10) + "px");
-            })
-            .on("mouseout", function() {
-                tooltip.style("visibility", "hidden");
+            .on("mouseout", function(d) {
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
                 d3.select(this).attr("stroke", d => (d[attribute] > 2000) ? "black" : "none").attr("stroke-width", 1);
             });
 
-        // Add title and explanation
         svg.append("text")
             .attr("text-anchor", "end")
             .style("fill", "black")
@@ -178,7 +169,6 @@ function createChart1(){
             .style("font-size", 14)
             .text("Covid Cases Statistics");
 
-        // Add legend: circles
         const valuesToShow = [100, 4000, 15000];
         const xCircle = 40;
         const xLabel = 90;
@@ -191,7 +181,6 @@ function createChart1(){
             .style("fill", "none")
             .attr("stroke", "black");
 
-        // Add legend: segments
         svg.selectAll("legend")
             .data(valuesToShow)
             .join("line")
@@ -202,7 +191,6 @@ function createChart1(){
             .attr('stroke', 'black')
             .style('stroke-dasharray', ('2,2'));
 
-        // Add legend: labels
         svg.selectAll("legend")
             .data(valuesToShow)
             .join("text")
@@ -272,14 +260,6 @@ function createChart2() {
 
     // Initialize with default attribute
     updateChart(attribute);
-    // Event listeners for button clicks to update data
-    document.getElementById("variable1").addEventListener("click", function() {
-        updateChart("Confirmed");
-    });
-
-    document.getElementById("variable2").addEventListener("click", function() {
-        updateChart("Deaths");
-    });
 }
 
 function createChart3(){
