@@ -211,6 +211,7 @@ function createChart2(selectedCountry) {
         width = 700 - margin.left - margin.right,
         height = 550 - margin.top - margin.bottom;
     let attribute = document.getElementById('bubbleAttribute').value;
+    let sortOrder = 'descending'; // Default sort order
 
     // Create an SVG or select existing SVG
     const svgContainer = d3.select("#chart2").select("svg");
@@ -229,10 +230,10 @@ function createChart2(selectedCountry) {
 
     const svg = svgContainer.select("g");
 
-    function updateChart(attribute, selectedCountry) {
+    function updateChart(attribute, selectedCountry, sortOrder) {
         d3.csv("covid19.csv").then(function(data) {
             // Sort data by the selected attribute
-            data = data.sort((a, b) => d3.descending(+a[attribute], +b[attribute]));
+            data = data.sort((a, b) => sortOrder === 'descending' ? d3.descending(+a[attribute], +b[attribute]) : d3.ascending(+a[attribute], +b[attribute]));
 
             // Find the index of the selected country
             let selectedIndex = data.findIndex(d => d.Country === selectedCountry);
@@ -291,8 +292,19 @@ function createChart2(selectedCountry) {
         });
     }
 
-    // Initialize with default attribute
-    updateChart(attribute, selectedCountry);
+    // Event listeners for sorting buttons
+    document.getElementById('ascOrderBtn').addEventListener('click', () => {
+        sortOrder = 'ascending';
+        updateChart(attribute, selectedCountry, sortOrder);
+    });
+
+    document.getElementById('descOrderBtn').addEventListener('click', () => {
+        sortOrder = 'descending';
+        updateChart(attribute, selectedCountry, sortOrder);
+    });
+
+    // Initialize with default attribute and sort order
+    updateChart(attribute, selectedCountry, sortOrder);
 }
 
 function createChart3(){
