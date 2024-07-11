@@ -28,16 +28,23 @@ async function initDashboard(_data, _dimensions, objArr) {
     document.getElementById("sankeyTarget").addEventListener("change", createChart3);
     document.getElementById("sankeyValue").addEventListener("change", createChart3);
 
-    // Event listener for Heatmap
-    document.getElementById('update-heatmap').addEventListener('click', () => {
-        const xColumn = document.getElementById('x-axis').value;
-        const yColumn = document.getElementById('y-axis').value;
-        const valueColumn = document.getElementById('value').value;
-        renderHeatmap(objArr, xColumn, yColumn, valueColumn);
+    // Event listener for the slider
+    const slider = document.getElementById("topNCountries");
+    const sliderValueDisplay = document.getElementById("topNCountriesValue");
+
+    slider.addEventListener("input", function() {
+        updateSliderValue(this.value);
+        updateSliderBackground(this);
+        createChart3();
     });
 
+    // Call this function initially to set the correct background on page load
+updateSliderBackground(slider);
+
     // Populate Heatmap dropdowns
-    populateHeatmapDropdowns(_dimensions);
+    populateHeatmapDropdowns(objArr);
+    // Initialize the heatmap
+    initializeHeatmap();
 
     //  SVG container
     chart1 = d3.select("#chart1").append("svg")
@@ -113,7 +120,7 @@ function createChart1(){
         svg.selectAll("*").remove();
 
         const color = d3.scaleOrdinal()
-            .domain(data.map(d => d["WHO Region"]))
+            .domain(data.map(d => d["WHORegion"]))
             .range(d3.schemeCategory10.slice(0,6));
 
         const valueExtent = d3.extent(data, d => +d[attribute]);
@@ -131,7 +138,7 @@ function createChart1(){
             .style("opacity", .3);
 
         const tooltip = d3.select("body").append("div")
-            .attr("class", "tooltip")
+            .attr("class", "sankey-tooltip") // Use the same class as Sankey-tooltip
             .style("opacity", 0);
 
         svg.selectAll("myCircles")
@@ -139,11 +146,16 @@ function createChart1(){
             .join("circle")
             .attr("cx", d => projection([+d.Longitude, +d.Latitude])[0])
             .attr("cy", d => projection([+d.Longitude, +d.Latitude])[1])
-            .attr("r", d => size(+d[attribute]))
-            .style("fill", d => color(d["WHO Region"]))
+            .attr("r", 0) // Start radius at 0 for animation
+            .style("fill", d => color(d["WHORegion"]))
             .attr("stroke", d => (d[attribute] > 2000) ? "black" : "none")
             .attr("stroke-width", 1)
             .attr("fill-opacity", .4)
+            .transition() // Add transition for animation
+            .duration(1500) // Animation duration
+            .attr("r", d => size(+d[attribute]));
+
+        svg.selectAll("circle")
             .on("mouseover", function(event, d) {
                 tooltip.transition()
                     .duration(200)
@@ -204,6 +216,7 @@ function createChart1(){
             .attr('alignment-baseline', 'middle');
     });
 }
+
 
 function createChart2(selectedCountry) {
     const margin = {top: 20, right: 30, bottom: 90, left: 90},
@@ -324,6 +337,21 @@ function clearDashboard() {
 }
 
 // ------------------------------------ Sankey Implementation ----------------------------------- //
+
+// Function to update the slider value display
+function updateSliderValue(value) {
+    const sliderValueDisplay = document.getElementById("topNCountriesValue");
+    sliderValueDisplay.textContent = value;
+}
+
+// Function to update the slider background fill
+function updateSliderBackground(slider) {
+    const value = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+    slider.style.background = `linear-gradient(to right, #3498db 0%, #3498db ${value}%, #ddd ${value}%, #ddd 100%)`;
+}
+
+
+
 function populateSankeyDropdowns(dimensions) {
     console.log("Populating Sankey dropdowns with dimensions:", dimensions);
 
@@ -351,7 +379,8 @@ function populateSankeyDropdowns(dimensions) {
 
 // Function to construct Data Structure for Sankey
 function constructSankeyData(source, middle, target, value, data) {
-    const filteredData = filterTopCountriesByRegion(data, source, middle, value);
+    const topN = +document.getElementById('topNCountries').value; // Get the current value of the slider
+    const filteredData = filterTopCountriesByRegion(data, source, middle, value, topN);
 
     let nodes = [];
     let nodeMap = {};
@@ -400,7 +429,11 @@ function constructSankeyData(source, middle, target, value, data) {
     return {nodes: nodes, links: links};
 }
 
+// Function to render the Sankey diagram
 function renderSankeyDiagram(data) {
+    const topN = +document.getElementById('topNCountries').value; // Get the current value of the slider
+    const filteredData = filterTopCountriesByRegion(data, 'Region', 'Country', 'Value', topN);
+
     const container = d3.select("#sankey");
     const width = container.node().getBoundingClientRect().width;
     const height = 1500;
@@ -414,7 +447,7 @@ function renderSankeyDiagram(data) {
         .append("g");
 
     const sankey = d3.sankey()
-        .nodeWidth(100)
+        .nodeWidth(200)
         .nodePadding(30)
         .extent([[1, 1], [width - 1, height - 6]]);
 
@@ -436,10 +469,20 @@ function renderSankeyDiagram(data) {
     // Color scale for WHO regions
     const color = d3.scaleOrdinal()
         .domain(graph.nodes.filter(d => d.layer === 0).map(d => d.name))
-        .range(d3.schemePaired.slice(0, 6));
+        .range(d3.schemeCategory10.slice(0, 6));
 
     // Map to store region colors for middle nodes
     const regionColorMap = {};
+
+    // Create a tooltip div for nodes
+    const nodeTooltip = d3.select("body").append("div")
+        .attr("class", "sankey-tooltip")
+        .style("visibility", "hidden");
+
+    // Create a tooltip div for links
+    const linkTooltip = d3.select("body").append("div")
+        .attr("class", "sankey-tooltip")
+        .style("visibility", "hidden");
 
     // Draw the nodes
     const nodes = svg.append("g")
@@ -468,19 +511,26 @@ function renderSankeyDiagram(data) {
         })
         .attr("stroke", "#000")
         .attr("id", d => `node-${d.index}`)
+        .style("cursor", "pointer")
         .on("mouseover", function(event, d) {
-            d3.select(this).attr("stroke", "red").attr("stroke-width", 3);
-            highlightNodeAndLinks(d, graph.links, true);
+            d3.select(this).attr("stroke", "#000").attr("stroke-width", 5);
+            highlightNodeAndLinks(d, graph.links, true, regionColorMap);
+            nodeTooltip.style("visibility", "visible")
+                .html(`<div class="tooltip-title">${d.layer === 0 ? "Region" : (d.layer === 1 ? "Country" : "Stringency Category")}: <strong>${d.name}</strong></div>
+                       <div class="tooltip-value">Value: ${d.value}</div>`);
+        })
+        .on("mousemove", function(event) {
+            nodeTooltip.style("top", (event.pageY - 10) + "px")
+                .style("left", (event.pageX + 10) + "px");
         })
         .on("mouseout", function(event, d) {
             d3.select(this).attr("stroke", "#999").attr("stroke-width", 1);
-            highlightNodeAndLinks(d, graph.links, false);
+            highlightNodeAndLinks(d, graph.links, false, regionColorMap);
+            nodeTooltip.style("visibility", "hidden");
         })
         .on("click", function(event, d) {
             filterHeatmap(d.name);
-        })
-        .append("title")
-        .text(d => `${d.name}\n${d.value}`);
+        });
 
     // Add text labels inside the nodes
     svg.append("g")
@@ -492,8 +542,10 @@ function renderSankeyDiagram(data) {
         .attr("dy", "0.35em")
         .attr("text-anchor", "middle")
         .attr("alignment-baseline", "middle")
-        .style("font-size", "14px")
+        .style("font-size", "15px")
         .style("fill", "black")
+        .style("user-select", "none")
+        .style("pointer-events", "none")
         .text(d => d.name)
         .each(wrapText);
 
@@ -508,46 +560,50 @@ function renderSankeyDiagram(data) {
         .attr("id", d => `link-${d.index}`)
         .attr("stroke", "#999")
         .attr("stroke-width", d => Math.max(1, d.width))
+        .style("cursor", "pointer")
         .on("mouseover", function(event, d) {
-            highlightNodeAndLinks(d.source, graph.links, true);
+            highlightNodeAndLinks(d.source, graph.links, true, regionColorMap);
+            linkTooltip.style("visibility", "visible")
+                .html(`<div class="tooltip-title">${d.source.name} → ${d.target.name}</div>
+                       <div class="tooltip-value">Value: ${d.value}</div>`);
+        })
+        .on("mousemove", function(event) {
+            linkTooltip.style("top", (event.pageY - 10) + "px")
+                .style("left", (event.pageX + 10) + "px");
         })
         .on("mouseout", function(event, d) {
-            highlightNodeAndLinks(d.source, graph.links, false);
+            highlightNodeAndLinks(d.source, graph.links, false, regionColorMap);
+            linkTooltip.style("visibility", "hidden");
         })
         .on("click", function(event, d) {
             filterHeatmap(d.source.name);
-        })
-        .append("title")
-        .text(d => {
-            const sourceNode = graph.nodes[d.source.index];
-            const targetNode = graph.nodes[d.target.index];
-            return `${sourceNode.name} → ${targetNode.name}\n${d.value}`;
         });
-}
 
-function highlightNodeAndLinks(node, links, highlight) {
-    const color = highlight ? "red" : "#999";
-    const strokeOpacity = highlight ? 1 : 0.5;
+    function highlightNodeAndLinks(node, links, highlight, regionColorMap) {
+        const color = highlight ? "#000" : "#999";
+        const strokeOpacity = highlight ? 1 : 0.5;
 
-    d3.select(`#node-${node.index}`)
-        .attr("stroke", color)
-        .attr("stroke-width", 3);
+        d3.select(`#node-${node.index}`)
+            .attr("stroke", color)
+            .attr("stroke-width", 3);
 
-    links.forEach(link => {
-        if (link.source === node || link.target === node) {
-            d3.select(`#link-${link.index}`)
-                .attr("stroke", d => {
-                    if (highlight) {
-                        if (d.target.name === "High") return "pink";
-                        else if (d.target.name === "Medium") return "yellow";
-                        else if (d.target.name === "Low") return "cyan";
-                    }
-                    return "#999";
-                })
-                .attr("stroke-opacity", strokeOpacity)
-                .attr("stroke-width", link.width);
-        }
-    });
+        links.forEach(link => {
+            if (link.source === node || link.target === node) {
+                d3.select(`#link-${link.index}`)
+                    .attr("stroke", d => {
+                        if (highlight) {
+                            if (d.target.name === "High") return "pink";
+                            else if (d.target.name === "Medium") return "yellow";
+                            else if (d.target.name === "Low") return "cyan";
+                            else return regionColorMap[d.source.name];
+                        }
+                        return "#999";
+                    })
+                    .attr("stroke-opacity", strokeOpacity)
+                    .attr("stroke-width", link.width);
+            }
+        });
+    }
 }
 
 function wrapText(d) {
@@ -575,8 +631,17 @@ function wrapText(d) {
 }
 
 
-function filterTopCountriesByRegion(data, regionColumn, countryColumn, valueColumn, topN = 5) {
+
+function filterTopCountriesByRegion(data, regionColumn, countryColumn, valueColumn, topN) {
+
+    // Ensure data is an array and has the necessary columns
+    if (!Array.isArray(data) || data.length === 0) {
+        console.error("Invalid data format");
+        return [];
+    }
+
     const groupedData = d3.groups(data, d => d[regionColumn]);
+    console.log("Grouped Data:", groupedData);
 
     return groupedData.flatMap(([region, countries]) => {
         return countries
@@ -590,43 +655,94 @@ function filterTopCountriesByRegion(data, regionColumn, countryColumn, valueColu
 // ------------------------------------ End of Sankey Implementation ------------------------------ //
 
 // ------------------------------------ Heat Map Implementation ---------------------------------- //
-function populateHeatmapDropdowns(dimensions) {
-    const xAxisSelect = document.getElementById('x-axis');
-    const yAxisSelect = document.getElementById('y-axis');
-    const valueSelect = document.getElementById('value');
+// Function to populate dropdowns for region and country
+function populateHeatmapDropdowns(data) {
+    const regionSelect = document.getElementById('region');
+    const countrySelect = document.getElementById('country');
+    const caseTypeSelect = document.getElementById('case-type');
+
+    console.log('Populating dropdowns...');
 
     // Clear previous options
-    xAxisSelect.innerHTML = '';
-    yAxisSelect.innerHTML = '';
-    valueSelect.innerHTML = '';
+    regionSelect.innerHTML = '';
+    countrySelect.innerHTML = '';
+    caseTypeSelect.innerHTML = '';
 
-    // Populate X-axis and Y-axis dropdowns
-    dimensions.forEach(attribute => {
-        const optionX = new Option(attribute, attribute);
-        xAxisSelect.add(optionX.cloneNode(true));
-        const optionY = new Option(attribute, attribute);
-        yAxisSelect.add(optionY.cloneNode(true));
+    // Extract unique values for regions and countries
+    const regions = [...new Set(data.map(d => d.WHORegion))];
+    const countries = [...new Set(data.map(d => d.Country))];
+
+    // Populate Region dropdown
+    regions.forEach(region => {
+        const option = new Option(region, region);
+        regionSelect.add(option);
     });
 
-    // Populate Value dropdown with numerical columns only
-    dimensions.forEach(attribute => {
-        const isNumeric = objArr.some(d => !isNaN(d[attribute]) && d[attribute] !== null);
-        if (isNumeric) {
-            const optionValue = new Option(attribute, attribute);
-            valueSelect.add(optionValue.cloneNode(true));
+    // Populate Country dropdown
+    countries.forEach(country => {
+        const option = new Option(country, country);
+        countrySelect.add(option);
+    });
+
+    // Extract numerical columns and populate Case Type dropdown
+    const firstRow = data[0];
+    const numericalColumns = Object.keys(firstRow).filter(key => {
+        return !isNaN(firstRow[key]) && key !== 'WHORegion' && key !== 'Country';
+    });
+
+    numericalColumns.forEach(column => {
+        const option = new Option(column, column);
+        caseTypeSelect.add(option);
+    });
+
+    console.log('Dropdowns populated.');
+}
+// Adjusted coolwarm color scale
+const coolwarm = d3.scaleSequential(d3.interpolateCool).domain([-1, 1]);
+
+// Function to compute the correlation matrix
+function computeCorrelationMatrix(data, variables) {
+    const n = variables.length;
+    const matrix = Array.from({ length: n }, () => Array(n).fill(0));
+
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+            matrix[i][j] = correlation(data.map(d => d[variables[i]]), data.map(d => d[variables[j]]));
         }
-    });
+    }
+
+    return matrix;
 }
 
-function renderHeatmap(data, xColumn, yColumn, valueColumn) {
-    const margin = { top: 50, right: 200, bottom: 300, left: 100 };
+// Helper function to compute the correlation between two arrays
+function correlation(x, y) {
+    const n = x.length;
+    const meanX = d3.mean(x);
+    const meanY = d3.mean(y);
+    const covXY = d3.sum(x.map((d, i) => (d - meanX) * (y[i] - meanY))) / n;
+    const stdDevX = Math.sqrt(d3.sum(x.map(d => (d - meanX) ** 2)) / n);
+    const stdDevY = Math.sqrt(d3.sum(y.map(d => (d - meanY) ** 2)) / n);
+    return covXY / (stdDevX * stdDevY);
+}
+
+// Function to render heatmap based on selected type
+function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
+    console.log("Data passed to renderHeatmap:", data);
+    console.log("Heatmap Type:", heatmapType);
+    console.log("Case Types:", caseTypes);
+    console.log("Color Scheme:", colorScheme);
+
+    if (data.length === 0) {
+        console.error("Filtered data is empty.");
+        return;
+    }
+
+    const margin = { top: 50, right: 200, bottom: 150, left: 100 };
     const width = 800 - margin.left - margin.right;
     const height = 800 - margin.top - margin.bottom;
 
-    // Remove any existing SVG
     d3.select("#heatmap").select("svg").remove();
 
-    // Create SVG
     const svg = d3.select("#heatmap")
         .append("svg")
         .attr("width", width + margin.left + margin.right)
@@ -634,101 +750,305 @@ function renderHeatmap(data, xColumn, yColumn, valueColumn) {
         .append("g")
         .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-    // Extract unique labels for x and y axes
-    const xLabels = [...new Set(data.map(d => d[xColumn]))];
-    const yLabels = [...new Set(data.map(d => d[yColumn]))];
+    if (heatmapType === 'correlation') {
+        const correlationMatrix = computeCorrelationMatrix(data, caseTypes);
+        console.log("Correlation Matrix:", correlationMatrix);
 
-    const x = d3.scaleBand()
-        .range([0, width])
-        .domain(xLabels)
-        .padding(0.01);
+        if (!Array.isArray(correlationMatrix)) {
+            console.error("Correlation Matrix is not an array");
+            return;
+        }
 
-    svg.append("g")
-        .attr("transform", `translate(0, ${height})`)
-        .call(d3.axisBottom(x));
-
-    const y = d3.scaleBand()
-        .range([height, 0])
-        .domain(yLabels)
-        .padding(0.01);
-
-    svg.append("g")
-        .call(d3.axisLeft(y));
-
-    const maxValue = d3.max(data, d => d[valueColumn]);
-    const minValue = d3.min(data, d => d[valueColumn]);
-    const colorScale = d3.scaleSequential()
-        .interpolator(d3.interpolateRdYlGn)
-        .domain([maxValue, minValue]);  // Note the reversed order to get green for low values and red for high values
-
-    const rects = svg.selectAll()
-        .data(data, d => d[xColumn] + ':' + d[yColumn])
-        .enter()
-        .append("rect")
-        .attr("x", d => x(d[xColumn]))
-        .attr("y", d => y(d[yColumn]))
-        .attr("width", x.bandwidth())
-        .attr("height", y.bandwidth())
-        .style("fill", d => colorScale(d[valueColumn]))
-        .style("opacity", 0)
-        .on("mouseover", (event, d) => {
-            const tooltip = document.getElementById('tooltip');
-            tooltip.style.display = 'block';
-            tooltip.style.left = event.pageX + 10 + 'px';
-            tooltip.style.top = event.pageY + 10 + 'px';
-            tooltip.innerHTML = `${xColumn}: ${d[xColumn]}<br>${yColumn}: ${d[yColumn]}<br>${valueColumn}: ${d[valueColumn]}`;
-        })
-        .on("mouseout", () => {
-            const tooltip = document.getElementById('tooltip');
-            tooltip.style.display = 'none';
+        correlationMatrix.forEach((row, i) => {
+            if (!Array.isArray(row)) {
+                console.error(`Row ${i} of correlation matrix is not an array`);
+            }
         });
 
-    // Add animation
-    rects.transition()
-        .duration(2000)  // Slower animation duration
-        .style("opacity", 1);
+        const labels = caseTypes;
 
-    // Add a legend for the heatmap
-    const legendWidth = 200;
-    const legendHeight = 20;
+        const x = d3.scaleBand()
+            .range([0, width])
+            .domain(labels)
+            .padding(0.01);
 
-    const legendSvg = svg.append("g")
-        .attr("transform", `translate(${width - legendWidth}, -30)`);
+        svg.append("g")
+            .attr("transform", `translate(0, ${height})`)
+            .call(d3.axisBottom(x))
+            .selectAll("text")
+            .attr("transform", "rotate(-45)")
+            .style("text-anchor", "end")
+            .style("font-size", "14px") // Increase the font size of x-axis labels
+            .style("font-family", "Arial, sans-serif"); // Change the font family of x-axis labels;
 
-    const legendScale = d3.scaleLinear()
-        .domain([minValue, maxValue])
-        .range([0, legendWidth]);
+        const y = d3.scaleBand()
+            .range([height, 0])
+            .domain(labels)
+            .padding(0.01);
 
-    const legendAxis = d3.axisBottom(legendScale)
-        .ticks(5)
-        .tickSize(legendHeight);
+        svg.append("g")
+            .call(d3.axisLeft(y))
+            .selectAll("text")
+            .style("font-size", "14px") // Increase the font size of y-axis labels
+            .style("font-family", "Arial, sans-serif"); // Change the font family of y-axis labels
 
-    legendSvg.selectAll("rect")
-        .data(d3.range(legendWidth), d => d)
-        .enter().append("rect")
-        .attr("x", d => d)
-        .attr("y", 0)
-        .attr("width", 1)
-        .attr("height", legendHeight)
-        .style("fill", d => colorScale(d / legendWidth * (maxValue - minValue) + minValue));
+        let colorScale;
+        switch (colorScheme) {
+            case 'coolwarm':
+                colorScale = d3.scaleSequential(d3.interpolateCool);
+                break;
+            case 'YlGnBu':
+                colorScale = d3.scaleSequential(d3.interpolateYlGnBu);
+                break;
+            default:
+                colorScale = d3.scaleSequential(d3.interpolateRdYlGn);
+        }
+        colorScale.domain([-1, 1]);
 
-    legendSvg.append("g")
-        .call(legendAxis)
-        .select(".domain")
-        .remove();
+        const flattenedData = correlationMatrix.flatMap((row, i) => row.map((value, j) => ({ value, i, j })));
+        console.log("Flattened Data for Rectangles:", flattenedData);
+
+        svg.selectAll()
+            .data(flattenedData)
+            .enter()
+            .append("rect")
+            .attr("x", d => x(labels[d.j]))
+            .attr("y", d => y(labels[d.i]))
+            .attr("width", x.bandwidth())
+            .attr("height", y.bandwidth())
+            .style("fill", d => colorScale(d.value))
+            .on("mouseover", (event, d) => {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.display = 'block';
+                tooltip.style.left = event.pageX + 10 + 'px';
+                tooltip.style.top = event.pageY + 10 + 'px';
+                tooltip.innerHTML = `${labels[d.i]} vs ${labels[d.j]}<br>Value: ${d.value.toFixed(2)}`;
+            })
+            .on("mouseout", () => {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.display = 'none';
+            });
+
+        const legendWidth = 200;
+        const legendHeight = 20;
+
+        const legendSvg = svg.append("g")
+            .attr("transform", `translate(${width - legendWidth}, -30)`);
+
+        const legendScale = d3.scaleLinear()
+            .domain([-1, 1])
+            .range([0, legendWidth]);
+
+        const legendAxis = d3.axisBottom(legendScale)
+            .ticks(5)
+            .tickSize(legendHeight);
+
+        legendSvg.selectAll("rect")
+            .data(d3.range(legendWidth), d => d)
+            .enter().append("rect")
+            .attr("x", d => d)
+            .attr("y", 0)
+            .attr("width", 1)
+            .attr("height", legendHeight)
+            .style("fill", d => colorScale(d / legendWidth * 2 - 1));
+
+        legendSvg.append("g")
+            .call(legendAxis)
+            .select(".domain")
+            .remove();
+    } else {
+        let xLabels, yLabels, x, y, maxValue, minValue, colorScale;
+
+        switch (heatmapType) {
+            case 'country-vs-cases':
+                xLabels = [...new Set(data.map(d => d.Country))];
+                yLabels = caseTypes;
+
+                x = d3.scaleBand()
+                    .range([0, width])
+                    .domain(xLabels)
+                    .padding(0.01);
+
+                svg.append("g")
+                    .attr("transform", `translate(0, ${height})`)
+                    .call(d3.axisBottom(x))
+                    .selectAll("text")
+                    .attr("transform", "rotate(-45)")
+                    .style("text-anchor", "end")
+                    .style("font-size", "14px") // Increase the font size of x-axis labels
+                    .style("font-family", "Arial, sans-serif"); // Change the font family of x-axis labels;
+
+                y = d3.scaleBand()
+                    .range([height, 0])
+                    .domain(yLabels)
+                    .padding(0.01);
+
+                svg.append("g")
+                    .call(d3.axisLeft(y))
+                    .selectAll("text")
+                    .style("font-size", "14px") // Increase the font size of y-axis labels
+                    .style("font-family", "Arial, sans-serif"); // Change the font family of y-axis labels
+
+                maxValue = d3.max(data, d => d3.max(caseTypes.map(ct => d[ct])));
+                minValue = d3.min(data, d => d3.min(caseTypes.map(ct => d[ct])));
+
+                colorScale = d3.scaleSequential()
+                    .interpolator(d3.interpolateRdYlGn)
+                    .domain([minValue, maxValue]);
+
+                const countryVsCasesData = data.flatMap(d => caseTypes.map(ct => ({ Country: d.Country, CaseType: ct, Value: d[ct] })));
+                console.log("Country vs Cases Data:", countryVsCasesData);
+
+                svg.selectAll()
+                    .data(countryVsCasesData)
+                    .enter()
+                    .append("rect")
+                    .attr("x", d => x(d.Country))
+                    .attr("y", d => y(d.CaseType))
+                    .attr("width", x.bandwidth())
+                    .attr("height", y.bandwidth())
+                    .style("fill", d => colorScale(d.Value))
+                    .on("mouseover", (event, d) => {
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.style.display = 'block';
+                        tooltip.style.left = event.pageX + 10 + 'px';
+                        tooltip.style.top = event.pageY + 10 + 'px';
+                        tooltip.innerHTML = `${d.Country}<br>${d.CaseType}: ${d.Value}`;
+                    })
+                    .on("mouseout", () => {
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.style.display = 'none';
+                    });
+                break;
+
+            case 'region-vs-cases':
+                xLabels = [...new Set(data.map(d => d.WHORegion))];
+                yLabels = caseTypes;
+
+                x = d3.scaleBand()
+                    .range([0, width])
+                    .domain(xLabels)
+                    .padding(0.01);
+
+                svg.append("g")
+                    .attr("transform", `translate(0, ${height})`)
+                    .call(d3.axisBottom(x))
+                    .selectAll("text")
+                    .attr("transform", "rotate(-45)")
+                    .style("text-anchor", "end")
+                    .style("font-size", "14px") // Increase the font size of x-axis labels
+                    .style("font-family", "Arial, sans-serif"); // Change the font family of x-axis labels;
+
+                y = d3.scaleBand()
+                    .range([height, 0])
+                    .domain(yLabels)
+                    .padding(0.01);
+
+                svg.append("g")
+                    .call(d3.axisLeft(y))
+                    .selectAll("text")
+                    .style("font-size", "14px") // Increase the font size of y-axis labels
+                    .style("font-family", "Arial, sans-serif"); // Change the font family of y-axis labels
+
+                maxValue = d3.max(data, d => d3.max(caseTypes.map(ct => d[ct])));
+                minValue = d3.min(data, d => d3.min(caseTypes.map(ct => d[ct])));
+
+                colorScale = d3.scaleSequential()
+                    .interpolator(d3.interpolateRdYlGn)
+                    .domain([minValue, maxValue]);
+
+                const regionVsCasesData = data.flatMap(d => caseTypes.map(ct => ({ WHORegion: d.WHORegion, CaseType: ct, Value: d[ct] })));
+                console.log("Region vs Cases Data:", regionVsCasesData);
+
+                svg.selectAll()
+                    .data(regionVsCasesData)
+                    .enter()
+                    .append("rect")
+                    .attr("x", d => x(d.WHORegion))
+                    .attr("y", d => y(d.CaseType))
+                    .attr("width", x.bandwidth())
+                    .attr("height", y.bandwidth())
+                    .style("fill", d => colorScale(d.Value))
+                    .on("mouseover", (event, d) => {
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.style.display = 'block';
+                        tooltip.style.left = event.pageX + 10 + 'px';
+                        tooltip.style.top = event.pageY + 10 + 'px';
+                        tooltip.innerHTML = `${d.WHORegion}<br>${d.CaseType}: ${d.Value}`;
+                    })
+                    .on("mouseout", () => {
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.style.display = 'none';
+                    });
+                break;
+        }
+
+        // Add a legend for the heatmap
+        const legendWidth = 200;
+        const legendHeight = 20;
+
+        const legendSvg = svg.append("g")
+            .attr("transform", `translate(${width - legendWidth}, -30)`);
+
+        const legendScale = d3.scaleLinear()
+            .domain([minValue, maxValue])
+            .range([0, legendWidth]);
+
+        const legendAxis = d3.axisBottom(legendScale)
+            .ticks(5)
+            .tickSize(legendHeight);
+
+        legendSvg.selectAll("rect")
+            .data(d3.range(legendWidth), d => d)
+            .enter().append("rect")
+            .attr("x", d => d)
+            .attr("y", 0)
+            .attr("width", 1)
+            .attr("height", legendHeight)
+            .style("fill", d => colorScale(d / legendWidth * (maxValue - minValue) + minValue));
+
+        legendSvg.append("g")
+            .call(legendAxis)
+            .select(".domain")
+            .remove();
+    }
 }
 
-function highlightHeatmap(region) {
-    d3.selectAll('.heatmap-cell')
-        .filter(d => d.region === region)
-        .classed('highlighted', true);
-}
+function initializeHeatmap() {
+    console.log('Initializing heatmap...');
+    // Add event listener to update button
+    document.getElementById("update-heatmap").addEventListener("click", () => {
+        const selectedHeatmapType = document.querySelector('input[name="heatmap-type"]:checked').value;
+        const selectedRegions = Array.from(document.getElementById("region").selectedOptions).map(option => option.value);
+        const selectedCountries = Array.from(document.getElementById("country").selectedOptions).map(option => option.value);
+        const selectedCaseTypes = Array.from(document.getElementById("case-type").selectedOptions).map(option => option.value);
+        const selectedColorScheme = document.getElementById("color-scheme").value;
 
-function resetHeatmapHighlight() {
-    d3.selectAll('.heatmap-cell').classed('highlighted', false);
-}
+        console.log("Selected Heatmap Type: ", selectedHeatmapType);
+        console.log("Selected Regions: ", selectedRegions);
+        console.log("Selected Countries: ", selectedCountries);
+        console.log("Selected Case Types: ", selectedCaseTypes);
+        console.log("Selected Color Scheme: ", selectedColorScheme);
 
-function filterHeatmap(region) {
-    const filteredData = objArr.filter(d => d.WHORegion === region);
-    renderHeatmap(filteredData, 'WHORegion', 'StringencyCategory', 'Deaths');
+        let filteredData = objArr;
+        console.log("Initial data length:", filteredData.length);
+        if (selectedRegions.length > 0) {
+            filteredData = filteredData.filter(d => selectedRegions.includes(d.WHORegion));
+        }
+        console.log("After region filter data length:", filteredData.length);
+        if (selectedCountries.length > 0) {
+            filteredData = filteredData.filter(d => selectedCountries.includes(d.Country));
+        }
+        console.log("After country filter data length:", filteredData.length);
+
+        if (filteredData.length === 0) {
+            console.error("Filtered data is empty.");
+            return;
+        }
+
+        renderHeatmap(filteredData, selectedHeatmapType, selectedCaseTypes, selectedColorScheme);
+    });
+
+    // Populate the dropdowns on page load
+    populateHeatmapDropdowns(objArr);
 }
