@@ -635,7 +635,7 @@ function computeCorrelationMatrix(data, variables) {
         }
     }
 
-    return { matrix, labels: variables };
+    return matrix;
 }
 
 // Helper function to compute the correlation between two arrays
@@ -650,19 +650,18 @@ function correlation(x, y) {
 }
 
 // Function to render heatmap based on selected type
-function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotations) {
+function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
     console.log("Data passed to renderHeatmap:", data);
     console.log("Heatmap Type:", heatmapType);
     console.log("Case Types:", caseTypes);
     console.log("Color Scheme:", colorScheme);
-    console.log("Show Annotations:", showAnnotations);
 
     if (data.length === 0) {
         console.error("Filtered data is empty.");
         return;
     }
 
-    const margin = { top: 50, right: 200, bottom: 300, left: 100 };
+    const margin = { top: 50, right: 200, bottom: 150, left: 100 };
     const width = 800 - margin.left - margin.right;
     const height = 800 - margin.top - margin.bottom;
 
@@ -679,6 +678,17 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotation
         const correlationMatrix = computeCorrelationMatrix(data, caseTypes);
         console.log("Correlation Matrix:", correlationMatrix);
 
+        if (!Array.isArray(correlationMatrix)) {
+            console.error("Correlation Matrix is not an array");
+            return;
+        }
+
+        correlationMatrix.forEach((row, i) => {
+            if (!Array.isArray(row)) {
+                console.error(`Row ${i} of correlation matrix is not an array`);
+            }
+        });
+
         const labels = caseTypes;
 
         const x = d3.scaleBand()
@@ -688,7 +698,12 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotation
 
         svg.append("g")
             .attr("transform", `translate(0, ${height})`)
-            .call(d3.axisBottom(x));
+            .call(d3.axisBottom(x))
+            .selectAll("text")
+            .attr("transform", "rotate(-45)")
+            .style("text-anchor", "end")
+            .style("font-size", "14px") // Increase the font size of x-axis labels
+            .style("font-family", "Arial, sans-serif"); // Change the font family of x-axis labels;
 
         const y = d3.scaleBand()
             .range([height, 0])
@@ -696,7 +711,10 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotation
             .padding(0.01);
 
         svg.append("g")
-            .call(d3.axisLeft(y));
+            .call(d3.axisLeft(y))
+            .selectAll("text")
+            .style("font-size", "14px") // Increase the font size of y-axis labels
+            .style("font-family", "Arial, sans-serif"); // Change the font family of y-axis labels
 
         let colorScale;
         switch (colorScheme) {
@@ -780,7 +798,9 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotation
                     .call(d3.axisBottom(x))
                     .selectAll("text")
                     .attr("transform", "rotate(-45)")
-                    .style("text-anchor", "end");
+                    .style("text-anchor", "end")
+                    .style("font-size", "14px") // Increase the font size of x-axis labels
+                    .style("font-family", "Arial, sans-serif"); // Change the font family of x-axis labels;
 
                 y = d3.scaleBand()
                     .range([height, 0])
@@ -788,7 +808,10 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotation
                     .padding(0.01);
 
                 svg.append("g")
-                    .call(d3.axisLeft(y));
+                    .call(d3.axisLeft(y))
+                    .selectAll("text")
+                    .style("font-size", "14px") // Increase the font size of y-axis labels
+                    .style("font-family", "Arial, sans-serif"); // Change the font family of y-axis labels
 
                 maxValue = d3.max(data, d => d3.max(caseTypes.map(ct => d[ct])));
                 minValue = d3.min(data, d => d3.min(caseTypes.map(ct => d[ct])));
@@ -822,62 +845,6 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotation
                     });
                 break;
 
-            case 'stringency-vs-cases':
-                xLabels = [...new Set(data.map(d => d.StringencyCategory))];
-                yLabels = caseTypes;
-
-                x = d3.scaleBand()
-                    .range([0, width])
-                    .domain(xLabels)
-                    .padding(0.01);
-
-                svg.append("g")
-                    .attr("transform", `translate(0, ${height})`)
-                    .call(d3.axisBottom(x))
-                    .selectAll("text")
-                    .attr("transform", "rotate(-45)")
-                    .style("text-anchor", "end");
-
-                y = d3.scaleBand()
-                    .range([height, 0])
-                    .domain(yLabels)
-                    .padding(0.01);
-
-                svg.append("g")
-                    .call(d3.axisLeft(y));
-
-                maxValue = d3.max(data, d => d3.max(caseTypes.map(ct => d[ct])));
-                minValue = d3.min(data, d => d3.min(caseTypes.map(ct => d[ct])));
-
-                colorScale = d3.scaleSequential()
-                    .interpolator(d3.interpolateRdYlGn)
-                    .domain([minValue, maxValue]);
-
-                const stringencyVsCasesData = data.flatMap(d => caseTypes.map(ct => ({ StringencyCategory: d.StringencyCategory, CaseType: ct, Value: d[ct] })));
-                console.log("Stringency vs Cases Data:", stringencyVsCasesData);
-
-                svg.selectAll()
-                    .data(stringencyVsCasesData)
-                    .enter()
-                    .append("rect")
-                    .attr("x", d => x(d.StringencyCategory))
-                    .attr("y", d => y(d.CaseType))
-                    .attr("width", x.bandwidth())
-                    .attr("height", y.bandwidth())
-                    .style("fill", d => colorScale(d.Value))
-                    .on("mouseover", (event, d) => {
-                        const tooltip = document.getElementById('tooltip');
-                        tooltip.style.display = 'block';
-                        tooltip.style.left = event.pageX + 10 + 'px';
-                        tooltip.style.top = event.pageY + 10 + 'px';
-                        tooltip.innerHTML = `${d.StringencyCategory}<br>${d.CaseType}: ${d.Value}`;
-                    })
-                    .on("mouseout", () => {
-                        const tooltip = document.getElementById('tooltip');
-                        tooltip.style.display = 'none';
-                    });
-                break;
-
             case 'region-vs-cases':
                 xLabels = [...new Set(data.map(d => d.WHORegion))];
                 yLabels = caseTypes;
@@ -892,7 +859,9 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotation
                     .call(d3.axisBottom(x))
                     .selectAll("text")
                     .attr("transform", "rotate(-45)")
-                    .style("text-anchor", "end");
+                    .style("text-anchor", "end")
+                    .style("font-size", "14px") // Increase the font size of x-axis labels
+                    .style("font-family", "Arial, sans-serif"); // Change the font family of x-axis labels;
 
                 y = d3.scaleBand()
                     .range([height, 0])
@@ -900,7 +869,10 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotation
                     .padding(0.01);
 
                 svg.append("g")
-                    .call(d3.axisLeft(y));
+                    .call(d3.axisLeft(y))
+                    .selectAll("text")
+                    .style("font-size", "14px") // Increase the font size of y-axis labels
+                    .style("font-family", "Arial, sans-serif"); // Change the font family of y-axis labels
 
                 maxValue = d3.max(data, d => d3.max(caseTypes.map(ct => d[ct])));
                 minValue = d3.min(data, d => d3.min(caseTypes.map(ct => d[ct])));
@@ -976,14 +948,12 @@ function initializeHeatmap() {
         const selectedCountries = Array.from(document.getElementById("country").selectedOptions).map(option => option.value);
         const selectedCaseTypes = Array.from(document.getElementById("case-type").selectedOptions).map(option => option.value);
         const selectedColorScheme = document.getElementById("color-scheme").value;
-        const showAnnotations = document.getElementById("annotations").checked;
 
         console.log("Selected Heatmap Type: ", selectedHeatmapType);
         console.log("Selected Regions: ", selectedRegions);
         console.log("Selected Countries: ", selectedCountries);
         console.log("Selected Case Types: ", selectedCaseTypes);
         console.log("Selected Color Scheme: ", selectedColorScheme);
-        console.log("Show Annotations: ", showAnnotations);
 
         let filteredData = objArr;
         console.log("Initial data length:", filteredData.length);
@@ -1001,7 +971,7 @@ function initializeHeatmap() {
             return;
         }
 
-        renderHeatmap(filteredData, selectedHeatmapType, selectedCaseTypes, selectedColorScheme, showAnnotations);
+        renderHeatmap(filteredData, selectedHeatmapType, selectedCaseTypes, selectedColorScheme);
     });
 
     // Populate the dropdowns on page load

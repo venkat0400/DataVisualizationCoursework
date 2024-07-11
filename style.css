@@ -256,3 +256,148 @@ div.tooltip {
         margin-top: 10px;
         font-size: 14px;
     }
+
+/* Controls styling */
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.controls label {
+    font-weight: bold;
+}
+
+.controls select, .controls input[type="range"] {
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.controls button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    background-color: #3498db;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.controls button:hover {
+    background-color: #2980b9;
+}
+
+#heatmap-container {
+    display: flex;
+    justify-content: center; /* Centers the chart horizontally */
+    align-items: flex-start; /* Aligns items to the top */
+    margin-top: 10px; /* Adds some margin to the top for better spacing */
+    padding: 20px; /* Adds padding for better spacing */
+}
+
+#heatmap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 600px;
+    padding: 10px;
+    margin: auto;
+}
+
+/* Styling for the controls */
+#heatmap-controls {
+    flex: 0 0 500px;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.heatmap-type-box {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+
+.radio-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.radio-group input[type="radio"] {
+    margin-right: 10px;
+}
+
+.radio-group label {
+    margin-right: 20px; /* Adjust spacing between radio button groups if needed */
+}
+
+#heatmap-controls label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+#heatmap-controls select[multiple] {
+    width: 100%;
+    height: 100px;
+    margin-bottom: 20px;
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+}
+
+#heatmap-controls select {
+    width: 100%;
+    height: 35px;
+    margin-bottom: 20px;
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+}
+
+#heatmap-controls button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 20px;
+    background-color: #007bff;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#heatmap-controls button:hover {
+    background-color: #0056b3;
+}
+
+#heatmap-controls select:focus,
+#heatmap-controls button:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+#tooltip {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px;
+    border-radius: 3px;
+    pointer-events: none;
+    font-size: 12px;
+    z-index: 10;
+}
+
+#heatmap svg {
+    display: block;
+    margin: auto;
+}
+
