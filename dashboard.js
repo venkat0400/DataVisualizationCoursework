@@ -412,10 +412,15 @@ function renderSankeyDiagram(data) {
     // Color scale for WHO regions
     const color = d3.scaleOrdinal()
         .domain(graph.nodes.filter(d => d.layer === 0).map(d => d.name))
-        .range(d3.schemeCategory10.slice(0, 6));
+        .range(d3.schemePaired.slice(0, 6));
 
     // Map to store region colors for middle nodes
     const regionColorMap = {};
+
+    // Create a tooltip div
+    const tooltip = d3.select("body").append("div")
+        .attr("class", "sankey-tooltip")
+        .style("visibility", "hidden");
 
     // Draw the nodes
     const nodes = svg.append("g")
@@ -444,19 +449,26 @@ function renderSankeyDiagram(data) {
         })
         .attr("stroke", "#000")
         .attr("id", d => `node-${d.index}`)
+        .style("cursor", "pointer")
         .on("mouseover", function(event, d) {
             d3.select(this).attr("stroke", "#000").attr("stroke-width", 5);
             highlightNodeAndLinks(d, graph.links, true, regionColorMap);
+            tooltip.style("visibility", "visible")
+                .html(`<div class="tooltip-title">${d.layer === 0 ? "Region" : (d.layer === 1 ? "Country" : "Stringency Category")}: <strong>${d.name}</strong></div>
+                       <div class="tooltip-value">Value: ${d.value}</div>`);
+        })
+        .on("mousemove", function(event) {
+            tooltip.style("top", (event.pageY - 10) + "px")
+                .style("left", (event.pageX + 10) + "px");
         })
         .on("mouseout", function(event, d) {
             d3.select(this).attr("stroke", "#999").attr("stroke-width", 1);
             highlightNodeAndLinks(d, graph.links, false, regionColorMap);
+            tooltip.style("visibility", "hidden");
         })
         .on("click", function(event, d) {
             filterHeatmap(d.name);
-        })
-        .append("title")
-        .text(d => `${d.name}\n${d.value}`);
+        });
 
     // Add text labels inside the nodes
     svg.append("g")
@@ -470,6 +482,8 @@ function renderSankeyDiagram(data) {
         .attr("alignment-baseline", "middle")
         .style("font-size", "14px")
         .style("fill", "black")
+        .style("user-select", "none")
+        .style("pointer-events", "none")
         .text(d => d.name)
         .each(wrapText);
 
@@ -484,6 +498,7 @@ function renderSankeyDiagram(data) {
         .attr("id", d => `link-${d.index}`)
         .attr("stroke", "#999")
         .attr("stroke-width", d => Math.max(1, d.width))
+        .style("cursor", "pointer")
         .on("mouseover", function(event, d) {
             highlightNodeAndLinks(d.source, graph.links, true, regionColorMap);
         })
@@ -497,7 +512,7 @@ function renderSankeyDiagram(data) {
         .text(d => {
             const sourceNode = graph.nodes[d.source.index];
             const targetNode = graph.nodes[d.target.index];
-            return `${sourceNode.name} → ${targetNode.name}\n${d.value}`;
+            return `${sourceNode.name} → ${targetNode.name}\nValue: ${d.value}`;
         });
 }
 
@@ -517,7 +532,7 @@ function highlightNodeAndLinks(node, links, highlight, regionColorMap) {
                         if (d.target.name === "High") return "pink";
                         else if (d.target.name === "Medium") return "yellow";
                         else if (d.target.name === "Low") return "cyan";
-                        return regionColorMap[d.source.name];
+                        else return regionColorMap[d.source.name];
                     }
                     return "#999";
                 })
@@ -526,8 +541,6 @@ function highlightNodeAndLinks(node, links, highlight, regionColorMap) {
         }
     });
 }
-
-
 
 function wrapText(d) {
     const text = d3.select(this);
@@ -552,6 +565,7 @@ function wrapText(d) {
         }
     }
 }
+
 
 
 function filterTopCountriesByRegion(data, regionColumn, countryColumn, valueColumn, topN = 5) {

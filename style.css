@@ -222,6 +222,8 @@ div.tooltip {
     }
 }
 
+/* Tooltips */
+
 #tooltip {
     position: absolute;
     text-align: center;
@@ -234,3 +236,23 @@ div.tooltip {
     border-radius: 8px;
     pointer-events: none;
 }
+
+.sankey-tooltip {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 8px;
+        border-radius: 4px;
+        pointer-events: none;
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        line-height: 1.5em;
+    }
+    .sankey-tooltip .tooltip-title {
+        font-weight: bold;
+        font-size: 14px;
+    }
+    .sankey-tooltip .tooltip-value {
+        margin-top: 10px;
+        font-size: 14px;
+    }
