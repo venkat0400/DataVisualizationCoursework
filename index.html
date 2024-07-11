@@ -104,7 +104,8 @@
 
 <!-- Tab 3 -->
 <div id="Dashboard" class="tabcontent">
-    <h1>Dashboard Example</h1>
+
+    <h1 style="margin-top: 50px">Dashboard Example</h1>
 
     <!-- TODO: The environment of your dashboard can be freely customized. Here is a general layout to get you started. -->
 
@@ -114,76 +115,121 @@
         <!-- chart 1 -->
         <div class="row">
         <div class="container">
-           <h2>Chart 1</h2>
-			<h4>Bubble Map Representation</h4>
-            <label for="bubbleAttribute">Select Attribute:</label>
-            <select id="bubbleAttribute">
-                <option value="Confirmed">Confirmed</option>
-                <option value="Deaths">Deaths</option>
-                <option value="Recovered">Recovered</option>
-                <option value="Active">Active</option>
-                <option value="New cases">New cases</option>
-                <option value="New deaths">New deaths</option>
-                <option value="New recovered">New recovered</option>
-                <option value="Deaths / 100 Cases">Deaths / 100 Cases</option>
-                <option value="Recovered / 100 Cases">Recovered / 100 Cases</option>
-                <option value="Deaths / 100 Recovered">Deaths / 100 Recovered</option>
-                <option value="Confirmed last week">Confirmed last week</option>
-                <option value="1 week change">1 week change</option>
-                <option value="1 week % increase">1 week % increase</option>
-            </select>
-            <!-- radar chart SVG -->
-            <div id="chart1"></div>
-        </div>
+    <h2>Bubble Map</h2>
+    <h4>Data Representation 1.</h4>
+    <div class="dropdown-container">
+        <label for="bubbleAttribute"><strong>Select Attribute:</strong></label>
+        <select id="bubbleAttribute">
+            <option value="Confirmed">Confirmed</option>
+            <option value="Deaths">Deaths</option>
+            <option value="Recovered">Recovered</option>
+            <option value="Active">Active</option>
+            <option value="New cases">New cases</option>
+            <option value="New deaths">New deaths</option>
+            <option value="New recovered">New recovered</option>
+            <option value="Deaths / 100 Cases">Deaths / 100 Cases</option>
+            <option value="Recovered / 100 Cases">Recovered / 100 Cases</option>
+            <option value="Deaths / 100 Recovered">Deaths / 100 Recovered</option>
+            <option value="Confirmed last week">Confirmed last week</option>
+            <option value="1 week change">1 week change</option>
+            <option value="1 week % increase">1 week % increase</option>
+        </select>
+    </div>
+    <!-- radar chart SVG -->
+    <div id="chart1"></div>
+</div>
 
         <!-- chart 2 -->
         <div class="container">
-           <h2>Chart 2</h2>
-			 <h4>Bar Chart Represenation</h4>
-            <!-- radar chart SVG -->
+           <h2>Bar Chart</h2>
+			 <h4>Data Represenation 2.</h4>
+            <div>
+                <button id="ascOrderBtn" class="custom-btn btn"><span>Ascending Order</span></button>
+                <button id="descOrderBtn" class="custom-btn btn"><span>Descending Order</span></button>
+            </div>
             <div id="chart2"></div>
         </div>
         </div>
         <!-- Second row: Sankey Diagram and Heat Map -->
             <div class="container">
-                <h2>Sankey Diagram</h2>
-                <h4>Data representation 3.</h4>
-                <!-- Dropdown menus for Sankey Diagram -->
-                <form id="sankeyForm">
-                    <fieldset>
-                        <label for="sankeySource">Grouping By:</label>
-                        <select name="sankeySource" id="sankeySource"></select><br/>
-                        <label for="sankeyMiddle">Middle:</label>
-                        <select name="sankeyMiddle" id="sankeyMiddle"></select><br/>
-                        <label for="sankeyTarget">Target:</label>
-                        <select name="sankeyTarget" id="sankeyTarget"></select><br/>
-                        <label for="sankeyValue">Value:</label>
-                        <select name="sankeyValue" id="sankeyValue"></select>
-                    </fieldset>
-                </form>
-                <div id="sankey"></div>
+    <h2>Sankey Diagram</h2>
+    <h4>Data representation 3.</h4>
+    <!-- Dropdown menus for Sankey Diagram -->
+    <form id="sankeyForm">
+        <fieldset class="sankey-controls">
+            <div class="dropdown-container">
+                <label for="sankeySource">Grouping By:</label>
+                <select name="sankeySource" id="sankeySource"></select>
             </div>
-            <div class="container">
-                <h2>Heat Map</h2>
-                <h4>Data representation 4.</h4>
-                <!-- Controls for Heatmap -->
-                <div class="controls">
-                    <label for="x-axis">X-axis:</label>
-                    <select id="x-axis"></select>
-                    <label for="y-axis">Y-axis:</label>
-                    <select id="y-axis"></select>
-                    <label for="value">Value:</label>
-                    <select id="value"></select>
-                    <button id="update-heatmap">Update Heatmap</button>
-                </div>
-                <div id="heatmap"></div>
-                <div class="tooltip" id="tooltip" style="display: none;"></div>
+            <div class="dropdown-container">
+                <label for="sankeyMiddle">Middle:</label>
+                <select name="sankeyMiddle" id="sankeyMiddle"></select>
             </div>
-
+            <div class="dropdown-container">
+                <label for="sankeyTarget">Target:</label>
+                <select name="sankeyTarget" id="sankeyTarget"></select>
+            </div>
+            <div class="dropdown-container">
+                <label for="sankeyValue">Value:</label>
+                <select name="sankeyValue" id="sankeyValue"></select>
+            </div>
+            <!-- Slider for selecting the number of countries -->
+            <div id="slider-container">
+            <label for="topNCountries"><strong>Number of Countries:</strong></label>
+            <input type="range" id="topNCountries" min="1" max="8" value="5" oninput="updateSliderValue(this.value)">
+            <output id="topNCountriesValue" for="topNCountries">5</output>
     </div>
-
+        </fieldset>
+    </form>
+    <div id="sankey"></div>
 </div>
 
-
+    <div class="container">
+        <h2>Heat Map</h2>
+                <h4>Data representation 4.</h4>
+    <div id="heatmap-container">
+    <div id="heatmap-controls">
+    <fieldset class="heatmap-type-box">
+        <legend><strong>Heatmap Type:</strong></legend>
+        <div class="radio-group" onclick="document.getElementById('correlation-heatmap').click()">
+            <input type="radio" id="correlation-heatmap" name="heatmap-type" value="correlation" checked>
+            <span class="check"></span>
+            <label for="correlation-heatmap">Correlation Heatmap</label>
+        </div>
+        <div class="radio-group" onclick="document.getElementById('country-vs-cases').click()">
+            <input type="radio" id="country-vs-cases" name="heatmap-type" value="country-vs-cases">
+            <span class="check"></span>
+            <label for="country-vs-cases">Country vs. Cases Heatmap</label>
+        </div>
+        <div class="radio-group" onclick="document.getElementById('region-vs-cases').click()">
+            <input type="radio" id="region-vs-cases" name="heatmap-type" value="region-vs-cases">
+            <span class="check"></span>
+            <label for="region-vs-cases">Region vs. Cases Heatmap</label>
+        </div>
+    </fieldset>
+    <label for="region">Region:</label>
+    <select id="region" multiple></select>
+    <label for="country">Country:</label>
+    <select id="country" multiple></select>
+    <label for="case-type">Case Type:</label>
+    <select id="case-type" multiple>
+        <option value="confirmed">Confirmed Cases</option>
+        <option value="deaths">Deaths</option>
+        <option value="recoveries">Recoveries</option>
+        <option value="active">Active Cases</option>
+    </select>
+    <label for="color-scheme">Color Scheme:</label>
+    <select id="color-scheme">
+        <option value="coolwarm">Coolwarm</option>
+        <option value="YlGnBu">YlGnBu</option>
+    </select>
+        <button id="update-heatmap" class="custom-btn btn"><span><strong>Update Heatmap</strong></span></button>
+</div>
+<div id="heatmap"></div>
+<div class="tooltip" id="tooltip" style="display: none;"></div>
+    </div>
+    </div>
+    </div>
+</div>
 </body>
 </html>
