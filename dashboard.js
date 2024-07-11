@@ -120,7 +120,7 @@ function createChart1(){
         svg.selectAll("*").remove();
 
         const color = d3.scaleOrdinal()
-            .domain(data.map(d => d["WHORegion"]))
+            .domain(data.map(d => d["WHO Region"]))
             .range(d3.schemeCategory10.slice(0,6));
 
         const valueExtent = d3.extent(data, d => +d[attribute]);
@@ -147,7 +147,7 @@ function createChart1(){
             .attr("cx", d => projection([+d.Longitude, +d.Latitude])[0])
             .attr("cy", d => projection([+d.Longitude, +d.Latitude])[1])
             .attr("r", 0) // Start radius at 0 for animation
-            .style("fill", d => color(d["WHORegion"]))
+            .style("fill", d => color(d["WHO Region"]))
             .attr("stroke", d => (d[attribute] > 2000) ? "black" : "none")
             .attr("stroke-width", 1)
             .attr("fill-opacity", .4)
