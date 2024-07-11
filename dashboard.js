@@ -408,7 +408,7 @@ function renderSankeyDiagram(data) {
     // Color scale for WHO regions
     const color = d3.scaleOrdinal()
         .domain(graph.nodes.filter(d => d.layer === 0).map(d => d.name))
-        .range(d3.schemePaired.slice(0, 6));
+        .range(d3.schemeCategory10.slice(0, 6));
 
     // Map to store region colors for middle nodes
     const regionColorMap = {};
@@ -621,24 +621,21 @@ function populateHeatmapDropdowns(data) {
 
     console.log('Dropdowns populated.');
 }
+// Adjusted coolwarm color scale
+const coolwarm = d3.scaleSequential(d3.interpolateCool).domain([-1, 1]);
+
 // Function to compute the correlation matrix
 function computeCorrelationMatrix(data, variables) {
-    const matrix = variables.map(() => Array(variables.length).fill(0));
-    const means = variables.map(v => d3.mean(data, d => +d[v]));
-    const stdDevs = variables.map((v, i) => Math.sqrt(d3.mean(data, d => Math.pow(+d[v] - means[i], 2))));
+    const n = variables.length;
+    const matrix = Array.from({ length: n }, () => Array(n).fill(0));
 
-    variables.forEach((var1, i) => {
-        variables.forEach((var2, j) => {
-            if (i === j) {
-                matrix[i][j] = 1;
-            } else {
-                const covariance = d3.mean(data, d => (+d[var1] - means[i]) * (+d[var2] - means[j]));
-                matrix[i][j] = covariance / (stdDevs[i] * stdDevs[j]);
-            }
-        });
-    });
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+            matrix[i][j] = correlation(data.map(d => d[variables[i]]), data.map(d => d[variables[j]]));
+        }
+    }
 
-    return matrix;
+    return { matrix, labels: variables };
 }
 
 // Helper function to compute the correlation between two arrays
@@ -682,7 +679,7 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotation
         const correlationMatrix = computeCorrelationMatrix(data, caseTypes);
         console.log("Correlation Matrix:", correlationMatrix);
 
-        const labels = Object.keys(correlationMatrix);
+        const labels = caseTypes;
 
         const x = d3.scaleBand()
             .range([0, width])
@@ -714,8 +711,11 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotation
         }
         colorScale.domain([-1, 1]);
 
+        const flattenedData = correlationMatrix.flatMap((row, i) => row.map((value, j) => ({ value, i, j })));
+        console.log("Flattened Data for Rectangles:", flattenedData);
+
         svg.selectAll()
-            .data(correlationMatrix.flatMap((row, i) => row.map((value, j) => ({ value, i, j }))))
+            .data(flattenedData)
             .enter()
             .append("rect")
             .attr("x", d => x(labels[d.j]))
@@ -795,10 +795,13 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotation
 
                 colorScale = d3.scaleSequential()
                     .interpolator(d3.interpolateRdYlGn)
-                    .domain([maxValue, minValue]);
+                    .domain([minValue, maxValue]);
+
+                const countryVsCasesData = data.flatMap(d => caseTypes.map(ct => ({ Country: d.Country, CaseType: ct, Value: d[ct] })));
+                console.log("Country vs Cases Data:", countryVsCasesData);
 
                 svg.selectAll()
-                    .data(data.flatMap(d => caseTypes.map(ct => ({ Country: d.Country, CaseType: ct, Value: d[ct] }))))
+                    .data(countryVsCasesData)
                     .enter()
                     .append("rect")
                     .attr("x", d => x(d.Country))
@@ -848,10 +851,13 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotation
 
                 colorScale = d3.scaleSequential()
                     .interpolator(d3.interpolateRdYlGn)
-                    .domain([maxValue, minValue]);
+                    .domain([minValue, maxValue]);
+
+                const stringencyVsCasesData = data.flatMap(d => caseTypes.map(ct => ({ StringencyCategory: d.StringencyCategory, CaseType: ct, Value: d[ct] })));
+                console.log("Stringency vs Cases Data:", stringencyVsCasesData);
 
                 svg.selectAll()
-                    .data(data.flatMap(d => caseTypes.map(ct => ({ StringencyCategory: d.StringencyCategory, CaseType: ct, Value: d[ct] }))))
+                    .data(stringencyVsCasesData)
                     .enter()
                     .append("rect")
                     .attr("x", d => x(d.StringencyCategory))
@@ -901,10 +907,13 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotation
 
                 colorScale = d3.scaleSequential()
                     .interpolator(d3.interpolateRdYlGn)
-                    .domain([maxValue, minValue]);
+                    .domain([minValue, maxValue]);
+
+                const regionVsCasesData = data.flatMap(d => caseTypes.map(ct => ({ WHORegion: d.WHORegion, CaseType: ct, Value: d[ct] })));
+                console.log("Region vs Cases Data:", regionVsCasesData);
 
                 svg.selectAll()
-                    .data(data.flatMap(d => caseTypes.map(ct => ({ WHORegion: d.WHORegion, CaseType: ct, Value: d[ct] }))))
+                    .data(regionVsCasesData)
                     .enter()
                     .append("rect")
                     .attr("x", d => x(d.WHORegion))
@@ -956,6 +965,7 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotation
             .remove();
     }
 }
+
 
 function initializeHeatmap() {
     console.log('Initializing heatmap...');
