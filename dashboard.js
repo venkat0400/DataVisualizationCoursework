@@ -113,7 +113,7 @@ function createChart1(){
         svg.selectAll("*").remove();
 
         const color = d3.scaleOrdinal()
-            .domain(data.map(d => d["WHO Region"]))
+            .domain(data.map(d => d["WHORegion"]))
             .range(d3.schemeCategory10.slice(0,6));
 
         const valueExtent = d3.extent(data, d => +d[attribute]);
@@ -140,7 +140,7 @@ function createChart1(){
             .attr("cx", d => projection([+d.Longitude, +d.Latitude])[0])
             .attr("cy", d => projection([+d.Longitude, +d.Latitude])[1])
             .attr("r", d => size(+d[attribute]))
-            .style("fill", d => color(d["WHO Region"]))
+            .style("fill", d => color(d["WHORegion"]))
             .attr("stroke", d => (d[attribute] > 2000) ? "black" : "none")
             .attr("stroke-width", 1)
             .attr("fill-opacity", .4)
@@ -412,7 +412,7 @@ function renderSankeyDiagram(data) {
     // Color scale for WHO regions
     const color = d3.scaleOrdinal()
         .domain(graph.nodes.filter(d => d.layer === 0).map(d => d.name))
-        .range(d3.schemePaired.slice(0, 6));
+        .range(d3.schemeCategory10.slice(0, 6));
 
     // Map to store region colors for middle nodes
     const regionColorMap = {};
