@@ -29,15 +29,11 @@ async function initDashboard(_data, _dimensions, objArr) {
     document.getElementById("sankeyValue").addEventListener("change", createChart3);
 
     // Event listener for Heatmap
-    document.getElementById('update-heatmap').addEventListener('click', () => {
-        const xColumn = document.getElementById('x-axis').value;
-        const yColumn = document.getElementById('y-axis').value;
-        const valueColumn = document.getElementById('value').value;
-        renderHeatmap(objArr, xColumn, yColumn, valueColumn);
-    });
 
     // Populate Heatmap dropdowns
-    populateHeatmapDropdowns(_dimensions);
+    populateHeatmapDropdowns(objArr);
+    // Initialize the heatmap
+    initializeHeatmap();
 
     //  SVG container
     chart1 = d3.select("#chart1").append("svg")
@@ -583,43 +579,98 @@ function filterTopCountriesByRegion(data, regionColumn, countryColumn, valueColu
 // ------------------------------------ End of Sankey Implementation ------------------------------ //
 
 // ------------------------------------ Heat Map Implementation ---------------------------------- //
-function populateHeatmapDropdowns(dimensions) {
-    const xAxisSelect = document.getElementById('x-axis');
-    const yAxisSelect = document.getElementById('y-axis');
-    const valueSelect = document.getElementById('value');
+// Function to populate dropdowns for region and country
+function populateHeatmapDropdowns(data) {
+    const regionSelect = document.getElementById('region');
+    const countrySelect = document.getElementById('country');
+    const caseTypeSelect = document.getElementById('case-type');
+
+    console.log('Populating dropdowns...');
 
     // Clear previous options
-    xAxisSelect.innerHTML = '';
-    yAxisSelect.innerHTML = '';
-    valueSelect.innerHTML = '';
+    regionSelect.innerHTML = '';
+    countrySelect.innerHTML = '';
+    caseTypeSelect.innerHTML = '';
 
-    // Populate X-axis and Y-axis dropdowns
-    dimensions.forEach(attribute => {
-        const optionX = new Option(attribute, attribute);
-        xAxisSelect.add(optionX.cloneNode(true));
-        const optionY = new Option(attribute, attribute);
-        yAxisSelect.add(optionY.cloneNode(true));
+    // Extract unique values for regions and countries
+    const regions = [...new Set(data.map(d => d.WHORegion))];
+    const countries = [...new Set(data.map(d => d.Country))];
+
+    // Populate Region dropdown
+    regions.forEach(region => {
+        const option = new Option(region, region);
+        regionSelect.add(option);
     });
 
-    // Populate Value dropdown with numerical columns only
-    dimensions.forEach(attribute => {
-        const isNumeric = objArr.some(d => !isNaN(d[attribute]) && d[attribute] !== null);
-        if (isNumeric) {
-            const optionValue = new Option(attribute, attribute);
-            valueSelect.add(optionValue.cloneNode(true));
-        }
+    // Populate Country dropdown
+    countries.forEach(country => {
+        const option = new Option(country, country);
+        countrySelect.add(option);
     });
+
+    // Extract numerical columns and populate Case Type dropdown
+    const firstRow = data[0];
+    const numericalColumns = Object.keys(firstRow).filter(key => {
+        return !isNaN(firstRow[key]) && key !== 'WHORegion' && key !== 'Country';
+    });
+
+    numericalColumns.forEach(column => {
+        const option = new Option(column, column);
+        caseTypeSelect.add(option);
+    });
+
+    console.log('Dropdowns populated.');
+}
+// Function to compute the correlation matrix
+function computeCorrelationMatrix(data, variables) {
+    const matrix = variables.map(() => Array(variables.length).fill(0));
+    const means = variables.map(v => d3.mean(data, d => +d[v]));
+    const stdDevs = variables.map((v, i) => Math.sqrt(d3.mean(data, d => Math.pow(+d[v] - means[i], 2))));
+
+    variables.forEach((var1, i) => {
+        variables.forEach((var2, j) => {
+            if (i === j) {
+                matrix[i][j] = 1;
+            } else {
+                const covariance = d3.mean(data, d => (+d[var1] - means[i]) * (+d[var2] - means[j]));
+                matrix[i][j] = covariance / (stdDevs[i] * stdDevs[j]);
+            }
+        });
+    });
+
+    return matrix;
 }
 
-function renderHeatmap(data, xColumn, yColumn, valueColumn) {
+// Helper function to compute the correlation between two arrays
+function correlation(x, y) {
+    const n = x.length;
+    const meanX = d3.mean(x);
+    const meanY = d3.mean(y);
+    const covXY = d3.sum(x.map((d, i) => (d - meanX) * (y[i] - meanY))) / n;
+    const stdDevX = Math.sqrt(d3.sum(x.map(d => (d - meanX) ** 2)) / n);
+    const stdDevY = Math.sqrt(d3.sum(y.map(d => (d - meanY) ** 2)) / n);
+    return covXY / (stdDevX * stdDevY);
+}
+
+// Function to render heatmap based on selected type
+function renderHeatmap(data, heatmapType, caseTypes, colorScheme, showAnnotations) {
+    console.log("Data passed to renderHeatmap:", data);
+    console.log("Heatmap Type:", heatmapType);
+    console.log("Case Types:", caseTypes);
+    console.log("Color Scheme:", colorScheme);
+    console.log("Show Annotations:", showAnnotations);
+
+    if (data.length === 0) {
+        console.error("Filtered data is empty.");
+        return;
+    }
+
     const margin = { top: 50, right: 200, bottom: 300, left: 100 };
     const width = 800 - margin.left - margin.right;
     const height = 800 - margin.top - margin.bottom;
 
-    // Remove any existing SVG
     d3.select("#heatmap").select("svg").remove();
 
-    // Create SVG
     const svg = d3.select("#heatmap")
         .append("svg")
         .attr("width", width + margin.left + margin.right)
@@ -627,101 +678,322 @@ function renderHeatmap(data, xColumn, yColumn, valueColumn) {
         .append("g")
         .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-    // Extract unique labels for x and y axes
-    const xLabels = [...new Set(data.map(d => d[xColumn]))];
-    const yLabels = [...new Set(data.map(d => d[yColumn]))];
+    if (heatmapType === 'correlation') {
+        const correlationMatrix = computeCorrelationMatrix(data, caseTypes);
+        console.log("Correlation Matrix:", correlationMatrix);
 
-    const x = d3.scaleBand()
-        .range([0, width])
-        .domain(xLabels)
-        .padding(0.01);
+        const labels = Object.keys(correlationMatrix);
 
-    svg.append("g")
-        .attr("transform", `translate(0, ${height})`)
-        .call(d3.axisBottom(x));
+        const x = d3.scaleBand()
+            .range([0, width])
+            .domain(labels)
+            .padding(0.01);
 
-    const y = d3.scaleBand()
-        .range([height, 0])
-        .domain(yLabels)
-        .padding(0.01);
+        svg.append("g")
+            .attr("transform", `translate(0, ${height})`)
+            .call(d3.axisBottom(x));
 
-    svg.append("g")
-        .call(d3.axisLeft(y));
+        const y = d3.scaleBand()
+            .range([height, 0])
+            .domain(labels)
+            .padding(0.01);
 
-    const maxValue = d3.max(data, d => d[valueColumn]);
-    const minValue = d3.min(data, d => d[valueColumn]);
-    const colorScale = d3.scaleSequential()
-        .interpolator(d3.interpolateRdYlGn)
-        .domain([maxValue, minValue]);  // Note the reversed order to get green for low values and red for high values
+        svg.append("g")
+            .call(d3.axisLeft(y));
 
-    const rects = svg.selectAll()
-        .data(data, d => d[xColumn] + ':' + d[yColumn])
-        .enter()
-        .append("rect")
-        .attr("x", d => x(d[xColumn]))
-        .attr("y", d => y(d[yColumn]))
-        .attr("width", x.bandwidth())
-        .attr("height", y.bandwidth())
-        .style("fill", d => colorScale(d[valueColumn]))
-        .style("opacity", 0)
-        .on("mouseover", (event, d) => {
-            const tooltip = document.getElementById('tooltip');
-            tooltip.style.display = 'block';
-            tooltip.style.left = event.pageX + 10 + 'px';
-            tooltip.style.top = event.pageY + 10 + 'px';
-            tooltip.innerHTML = `${xColumn}: ${d[xColumn]}<br>${yColumn}: ${d[yColumn]}<br>${valueColumn}: ${d[valueColumn]}`;
-        })
-        .on("mouseout", () => {
-            const tooltip = document.getElementById('tooltip');
-            tooltip.style.display = 'none';
-        });
+        let colorScale;
+        switch (colorScheme) {
+            case 'coolwarm':
+                colorScale = d3.scaleSequential(d3.interpolateCool);
+                break;
+            case 'YlGnBu':
+                colorScale = d3.scaleSequential(d3.interpolateYlGnBu);
+                break;
+            default:
+                colorScale = d3.scaleSequential(d3.interpolateRdYlGn);
+        }
+        colorScale.domain([-1, 1]);
 
-    // Add animation
-    rects.transition()
-        .duration(2000)  // Slower animation duration
-        .style("opacity", 1);
+        svg.selectAll()
+            .data(correlationMatrix.flatMap((row, i) => row.map((value, j) => ({ value, i, j }))))
+            .enter()
+            .append("rect")
+            .attr("x", d => x(labels[d.j]))
+            .attr("y", d => y(labels[d.i]))
+            .attr("width", x.bandwidth())
+            .attr("height", y.bandwidth())
+            .style("fill", d => colorScale(d.value))
+            .on("mouseover", (event, d) => {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.display = 'block';
+                tooltip.style.left = event.pageX + 10 + 'px';
+                tooltip.style.top = event.pageY + 10 + 'px';
+                tooltip.innerHTML = `${labels[d.i]} vs ${labels[d.j]}<br>Value: ${d.value.toFixed(2)}`;
+            })
+            .on("mouseout", () => {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.display = 'none';
+            });
 
-    // Add a legend for the heatmap
-    const legendWidth = 200;
-    const legendHeight = 20;
+        const legendWidth = 200;
+        const legendHeight = 20;
 
-    const legendSvg = svg.append("g")
-        .attr("transform", `translate(${width - legendWidth}, -30)`);
+        const legendSvg = svg.append("g")
+            .attr("transform", `translate(${width - legendWidth}, -30)`);
 
-    const legendScale = d3.scaleLinear()
-        .domain([minValue, maxValue])
-        .range([0, legendWidth]);
+        const legendScale = d3.scaleLinear()
+            .domain([-1, 1])
+            .range([0, legendWidth]);
 
-    const legendAxis = d3.axisBottom(legendScale)
-        .ticks(5)
-        .tickSize(legendHeight);
+        const legendAxis = d3.axisBottom(legendScale)
+            .ticks(5)
+            .tickSize(legendHeight);
 
-    legendSvg.selectAll("rect")
-        .data(d3.range(legendWidth), d => d)
-        .enter().append("rect")
-        .attr("x", d => d)
-        .attr("y", 0)
-        .attr("width", 1)
-        .attr("height", legendHeight)
-        .style("fill", d => colorScale(d / legendWidth * (maxValue - minValue) + minValue));
+        legendSvg.selectAll("rect")
+            .data(d3.range(legendWidth), d => d)
+            .enter().append("rect")
+            .attr("x", d => d)
+            .attr("y", 0)
+            .attr("width", 1)
+            .attr("height", legendHeight)
+            .style("fill", d => colorScale(d / legendWidth * 2 - 1));
 
-    legendSvg.append("g")
-        .call(legendAxis)
-        .select(".domain")
-        .remove();
+        legendSvg.append("g")
+            .call(legendAxis)
+            .select(".domain")
+            .remove();
+    } else {
+        let xLabels, yLabels, x, y, maxValue, minValue, colorScale;
+
+        switch (heatmapType) {
+            case 'country-vs-cases':
+                xLabels = [...new Set(data.map(d => d.Country))];
+                yLabels = caseTypes;
+
+                x = d3.scaleBand()
+                    .range([0, width])
+                    .domain(xLabels)
+                    .padding(0.01);
+
+                svg.append("g")
+                    .attr("transform", `translate(0, ${height})`)
+                    .call(d3.axisBottom(x))
+                    .selectAll("text")
+                    .attr("transform", "rotate(-45)")
+                    .style("text-anchor", "end");
+
+                y = d3.scaleBand()
+                    .range([height, 0])
+                    .domain(yLabels)
+                    .padding(0.01);
+
+                svg.append("g")
+                    .call(d3.axisLeft(y));
+
+                maxValue = d3.max(data, d => d3.max(caseTypes.map(ct => d[ct])));
+                minValue = d3.min(data, d => d3.min(caseTypes.map(ct => d[ct])));
+
+                colorScale = d3.scaleSequential()
+                    .interpolator(d3.interpolateRdYlGn)
+                    .domain([maxValue, minValue]);
+
+                svg.selectAll()
+                    .data(data.flatMap(d => caseTypes.map(ct => ({ Country: d.Country, CaseType: ct, Value: d[ct] }))))
+                    .enter()
+                    .append("rect")
+                    .attr("x", d => x(d.Country))
+                    .attr("y", d => y(d.CaseType))
+                    .attr("width", x.bandwidth())
+                    .attr("height", y.bandwidth())
+                    .style("fill", d => colorScale(d.Value))
+                    .on("mouseover", (event, d) => {
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.style.display = 'block';
+                        tooltip.style.left = event.pageX + 10 + 'px';
+                        tooltip.style.top = event.pageY + 10 + 'px';
+                        tooltip.innerHTML = `${d.Country}<br>${d.CaseType}: ${d.Value}`;
+                    })
+                    .on("mouseout", () => {
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.style.display = 'none';
+                    });
+                break;
+
+            case 'stringency-vs-cases':
+                xLabels = [...new Set(data.map(d => d.StringencyCategory))];
+                yLabels = caseTypes;
+
+                x = d3.scaleBand()
+                    .range([0, width])
+                    .domain(xLabels)
+                    .padding(0.01);
+
+                svg.append("g")
+                    .attr("transform", `translate(0, ${height})`)
+                    .call(d3.axisBottom(x))
+                    .selectAll("text")
+                    .attr("transform", "rotate(-45)")
+                    .style("text-anchor", "end");
+
+                y = d3.scaleBand()
+                    .range([height, 0])
+                    .domain(yLabels)
+                    .padding(0.01);
+
+                svg.append("g")
+                    .call(d3.axisLeft(y));
+
+                maxValue = d3.max(data, d => d3.max(caseTypes.map(ct => d[ct])));
+                minValue = d3.min(data, d => d3.min(caseTypes.map(ct => d[ct])));
+
+                colorScale = d3.scaleSequential()
+                    .interpolator(d3.interpolateRdYlGn)
+                    .domain([maxValue, minValue]);
+
+                svg.selectAll()
+                    .data(data.flatMap(d => caseTypes.map(ct => ({ StringencyCategory: d.StringencyCategory, CaseType: ct, Value: d[ct] }))))
+                    .enter()
+                    .append("rect")
+                    .attr("x", d => x(d.StringencyCategory))
+                    .attr("y", d => y(d.CaseType))
+                    .attr("width", x.bandwidth())
+                    .attr("height", y.bandwidth())
+                    .style("fill", d => colorScale(d.Value))
+                    .on("mouseover", (event, d) => {
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.style.display = 'block';
+                        tooltip.style.left = event.pageX + 10 + 'px';
+                        tooltip.style.top = event.pageY + 10 + 'px';
+                        tooltip.innerHTML = `${d.StringencyCategory}<br>${d.CaseType}: ${d.Value}`;
+                    })
+                    .on("mouseout", () => {
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.style.display = 'none';
+                    });
+                break;
+
+            case 'region-vs-cases':
+                xLabels = [...new Set(data.map(d => d.WHORegion))];
+                yLabels = caseTypes;
+
+                x = d3.scaleBand()
+                    .range([0, width])
+                    .domain(xLabels)
+                    .padding(0.01);
+
+                svg.append("g")
+                    .attr("transform", `translate(0, ${height})`)
+                    .call(d3.axisBottom(x))
+                    .selectAll("text")
+                    .attr("transform", "rotate(-45)")
+                    .style("text-anchor", "end");
+
+                y = d3.scaleBand()
+                    .range([height, 0])
+                    .domain(yLabels)
+                    .padding(0.01);
+
+                svg.append("g")
+                    .call(d3.axisLeft(y));
+
+                maxValue = d3.max(data, d => d3.max(caseTypes.map(ct => d[ct])));
+                minValue = d3.min(data, d => d3.min(caseTypes.map(ct => d[ct])));
+
+                colorScale = d3.scaleSequential()
+                    .interpolator(d3.interpolateRdYlGn)
+                    .domain([maxValue, minValue]);
+
+                svg.selectAll()
+                    .data(data.flatMap(d => caseTypes.map(ct => ({ WHORegion: d.WHORegion, CaseType: ct, Value: d[ct] }))))
+                    .enter()
+                    .append("rect")
+                    .attr("x", d => x(d.WHORegion))
+                    .attr("y", d => y(d.CaseType))
+                    .attr("width", x.bandwidth())
+                    .attr("height", y.bandwidth())
+                    .style("fill", d => colorScale(d.Value))
+                    .on("mouseover", (event, d) => {
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.style.display = 'block';
+                        tooltip.style.left = event.pageX + 10 + 'px';
+                        tooltip.style.top = event.pageY + 10 + 'px';
+                        tooltip.innerHTML = `${d.WHORegion}<br>${d.CaseType}: ${d.Value}`;
+                    })
+                    .on("mouseout", () => {
+                        const tooltip = document.getElementById('tooltip');
+                        tooltip.style.display = 'none';
+                    });
+                break;
+        }
+
+        // Add a legend for the heatmap
+        const legendWidth = 200;
+        const legendHeight = 20;
+
+        const legendSvg = svg.append("g")
+            .attr("transform", `translate(${width - legendWidth}, -30)`);
+
+        const legendScale = d3.scaleLinear()
+            .domain([minValue, maxValue])
+            .range([0, legendWidth]);
+
+        const legendAxis = d3.axisBottom(legendScale)
+            .ticks(5)
+            .tickSize(legendHeight);
+
+        legendSvg.selectAll("rect")
+            .data(d3.range(legendWidth), d => d)
+            .enter().append("rect")
+            .attr("x", d => d)
+            .attr("y", 0)
+            .attr("width", 1)
+            .attr("height", legendHeight)
+            .style("fill", d => colorScale(d / legendWidth * (maxValue - minValue) + minValue));
+
+        legendSvg.append("g")
+            .call(legendAxis)
+            .select(".domain")
+            .remove();
+    }
 }
 
-function highlightHeatmap(region) {
-    d3.selectAll('.heatmap-cell')
-        .filter(d => d.region === region)
-        .classed('highlighted', true);
-}
+function initializeHeatmap() {
+    console.log('Initializing heatmap...');
+    // Add event listener to update button
+    document.getElementById("update-heatmap").addEventListener("click", () => {
+        const selectedHeatmapType = document.querySelector('input[name="heatmap-type"]:checked').value;
+        const selectedRegions = Array.from(document.getElementById("region").selectedOptions).map(option => option.value);
+        const selectedCountries = Array.from(document.getElementById("country").selectedOptions).map(option => option.value);
+        const selectedCaseTypes = Array.from(document.getElementById("case-type").selectedOptions).map(option => option.value);
+        const selectedColorScheme = document.getElementById("color-scheme").value;
+        const showAnnotations = document.getElementById("annotations").checked;
 
-function resetHeatmapHighlight() {
-    d3.selectAll('.heatmap-cell').classed('highlighted', false);
-}
+        console.log("Selected Heatmap Type: ", selectedHeatmapType);
+        console.log("Selected Regions: ", selectedRegions);
+        console.log("Selected Countries: ", selectedCountries);
+        console.log("Selected Case Types: ", selectedCaseTypes);
+        console.log("Selected Color Scheme: ", selectedColorScheme);
+        console.log("Show Annotations: ", showAnnotations);
 
-function filterHeatmap(region) {
-    const filteredData = objArr.filter(d => d.WHORegion === region);
-    renderHeatmap(filteredData, 'WHORegion', 'StringencyCategory', 'Deaths');
+        let filteredData = objArr;
+        console.log("Initial data length:", filteredData.length);
+        if (selectedRegions.length > 0) {
+            filteredData = filteredData.filter(d => selectedRegions.includes(d.WHORegion));
+        }
+        console.log("After region filter data length:", filteredData.length);
+        if (selectedCountries.length > 0) {
+            filteredData = filteredData.filter(d => selectedCountries.includes(d.Country));
+        }
+        console.log("After country filter data length:", filteredData.length);
+
+        if (filteredData.length === 0) {
+            console.error("Filtered data is empty.");
+            return;
+        }
+
+        renderHeatmap(filteredData, selectedHeatmapType, selectedCaseTypes, selectedColorScheme, showAnnotations);
+    });
+
+    // Populate the dropdowns on page load
+    populateHeatmapDropdowns(objArr);
 }

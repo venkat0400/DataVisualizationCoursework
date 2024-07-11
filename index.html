@@ -168,22 +168,36 @@
                 <h4>Data representation 4.</h4>
                 <!-- Controls for Heatmap -->
                 <div class="controls">
-                    <label for="x-axis">X-axis:</label>
-                    <select id="x-axis"></select>
-                    <label for="y-axis">Y-axis:</label>
-                    <select id="y-axis"></select>
-                    <label for="value">Value:</label>
-                    <select id="value"></select>
-                    <button id="update-heatmap">Update Heatmap</button>
-                </div>
-                <div id="heatmap"></div>
-                <div class="tooltip" id="tooltip" style="display: none;"></div>
+                    <fieldset>
+                <legend>Heatmap Type:</legend>
+                <label><input type="radio" name="heatmap-type" value="correlation" checked> Correlation Heatmap</label>
+                <label><input type="radio" name="heatmap-type" value="country-vs-cases"> Country vs. Cases Heatmap</label>
+                <label><input type="radio" name="heatmap-type" value="stringency-vs-cases"> Stringency Index vs. Cases Heatmap</label>
+                <label><input type="radio" name="heatmap-type" value="region-vs-cases"> Region vs. Cases Heatmap</label>
+            </fieldset>
+    <label for="region">Region:</label>
+    <select id="region" multiple></select>
+    <label for="country">Country:</label>
+    <select id="country" multiple></select>
+    <label for="case-type">Case Type:</label>
+    <select id="case-type" multiple></select>
+    <label for="stringency-index">Stringency Index:</label>
+    <input type="range" id="stringency-index" min="0" max="100">
+    <label for="color-scheme">Color Scheme:</label>
+    <select id="color-scheme">
+        <option value="coolwarm">Coolwarm</option>
+        <option value="YlGnBu">YlGnBu</option>
+    </select>
+    <label for="annotations">Show Annotations:</label>
+    <input type="checkbox" id="annotations" checked>
+    <button id="update-heatmap">Update Heatmap</button>
+</div>
+<div id="heatmap"></div>
+<div class="tooltip" id="tooltip" style="display: none;"></div>
             </div>
 
     </div>
-
 </div>
-
 
 </body>
 </html>
