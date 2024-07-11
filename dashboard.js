@@ -213,7 +213,6 @@ function createChart2(selectedCountry) {
     const svg = d3.select("#chart2 svg g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-
     function updateChart(attribute, selectedCountry) {
         d3.csv("covid19.csv").then(function(data) {
             // Sort data by the selected attribute
@@ -243,7 +242,8 @@ function createChart2(selectedCountry) {
                 .call(d3.axisBottom(x))
                 .selectAll("text")
                 .attr("transform", "translate(-10,0)rotate(-45)")
-                .style("text-anchor", "end");
+                .style("text-anchor", "end")
+                .style("font-weight", d => d === selectedCountry ? "bold" : "normal");
 
             // Y axis
             const y = d3.scaleLinear()
@@ -259,7 +259,7 @@ function createChart2(selectedCountry) {
                 .join("rect")
                 .attr("x", d => x(d["Country"]))
                 .attr("width", x.bandwidth())
-                .attr("fill", "#69b3a2")
+                .attr("fill", d => d.Country === selectedCountry ? "orange" : "#69b3a2")
                 // No bar at the beginning thus:
                 .attr("height", d => height - y(0)) // always equal to 0
                 .attr("y", d => y(0))
@@ -267,7 +267,12 @@ function createChart2(selectedCountry) {
                 .duration(800)
                 .attr("y", d => y(+d[attribute]))
                 .attr("height", d => height - y(+d[attribute]))
-                .delay((d,i) => i * 100);
+                .delay((d, i) => i * 100);
+
+            // Highlight selected country
+            svg.selectAll("text")
+                .style("font-weight", d => d === selectedCountry ? "bold" : "normal")
+                .style("fill", d => d === selectedCountry ? "orange" : "black");
         });
     }
 
