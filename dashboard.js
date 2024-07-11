@@ -203,32 +203,43 @@ function createChart1(){
 
 function createChart2(selectedCountry) {
     const margin = {top: 20, right: 30, bottom: 90, left: 90},
+        containerWidth = document.getElementById('chart2').clientWidth,
         width = 700 - margin.left - margin.right,
         height = 550 - margin.top - margin.bottom;
     let attribute = document.getElementById('bubbleAttribute').value;
-    const svg = d3.select("#chart2 svg g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+    let sortOrder = 'descending'; // Default sort order
 
+    // Create an SVG or select existing SVG
+    const svgContainer = d3.select("#chart2").select("svg");
+    if (svgContainer.empty()) {
+        svgContainer.append("svg")
+            .attr("width", containerWidth)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${(containerWidth - width) / 2},${margin.top})`);
+    } else {
+        svgContainer.attr("width", containerWidth)
+            .attr("height", height + margin.top + margin.bottom)
+            .select("g")
+            .attr("transform", `translate(${(containerWidth - width) / 2},${margin.top})`);
+    }
 
-    function updateChart(attribute, selectedCountry) {
+    const svg = svgContainer.select("g");
+
+    function updateChart(attribute, selectedCountry, sortOrder) {
         d3.csv("covid19.csv").then(function(data) {
-            // Sort data by the selected attribute
-            data = data.sort((a, b) => d3.descending(+a[attribute], +b[attribute]));
-
-            // Find the index of the selected country
+            data = data.sort((a, b) => sortOrder === 'descending' ? d3.descending(+a[attribute], +b[attribute]) : d3.ascending(+a[attribute], +b[attribute]));
             let selectedIndex = data.findIndex(d => d.Country === selectedCountry);
 
-            // Get the countries around the selected country
             let start = Math.max(0, selectedIndex - 4);
             let end = Math.min(data.length, selectedIndex + 5);
 
-            // Filter the data to get the required countries
             data = data.slice(start, end);
 
-            // Clear previous elements
+
             svg.selectAll("*").remove();
 
-            // X axis
+
             const x = d3.scaleBand()
                 .range([0, width])
                 .domain(data.map(d => d["Country"]))
@@ -239,9 +250,10 @@ function createChart2(selectedCountry) {
                 .call(d3.axisBottom(x))
                 .selectAll("text")
                 .attr("transform", "translate(-10,0)rotate(-45)")
-                .style("text-anchor", "end");
+                .style("text-anchor", "end")
+                .style("font-weight", d => d === selectedCountry ? "bold" : "normal");
 
-            // Y axis
+
             const y = d3.scaleLinear()
                 .domain([0, d3.max(data, d => +d[attribute])])
                 .range([height, 0]);
@@ -249,26 +261,38 @@ function createChart2(selectedCountry) {
             svg.append("g")
                 .call(d3.axisLeft(y));
 
-            // Bars
+
             svg.selectAll("mybar")
                 .data(data)
                 .join("rect")
                 .attr("x", d => x(d["Country"]))
                 .attr("width", x.bandwidth())
-                .attr("fill", "#69b3a2")
-                // No bar at the beginning thus:
+                .attr("fill", d => d.Country === selectedCountry ? "orange" : "#69b3a2")
                 .attr("height", d => height - y(0)) // always equal to 0
                 .attr("y", d => y(0))
                 .transition()
                 .duration(800)
                 .attr("y", d => y(+d[attribute]))
                 .attr("height", d => height - y(+d[attribute]))
-                .delay((d,i) => i * 100);
+                .delay((d, i) => i * 100);
+
+            svg.selectAll("text")
+                .style("font-weight", d => d === selectedCountry ? "bold" : "normal")
+                .style("fill", d => d === selectedCountry ? "orange" : "black");
         });
     }
 
-    // Initialize with default attribute
-    updateChart(attribute, selectedCountry);
+    document.getElementById('ascOrderBtn').addEventListener('click', () => {
+        sortOrder = 'ascending';
+        updateChart(attribute, selectedCountry, sortOrder);
+    });
+
+    document.getElementById('descOrderBtn').addEventListener('click', () => {
+        sortOrder = 'descending';
+        updateChart(attribute, selectedCountry, sortOrder);
+    });
+
+    updateChart(attribute, selectedCountry, sortOrder);
 }
 
 function createChart3(){
