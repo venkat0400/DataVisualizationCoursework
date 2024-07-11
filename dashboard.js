@@ -445,12 +445,12 @@ function renderSankeyDiagram(data) {
         .attr("stroke", "#000")
         .attr("id", d => `node-${d.index}`)
         .on("mouseover", function(event, d) {
-            d3.select(this).attr("stroke", "red").attr("stroke-width", 3);
-            highlightNodeAndLinks(d, graph.links, true);
+            d3.select(this).attr("stroke", "#000").attr("stroke-width", 5);
+            highlightNodeAndLinks(d, graph.links, true, regionColorMap);
         })
         .on("mouseout", function(event, d) {
             d3.select(this).attr("stroke", "#999").attr("stroke-width", 1);
-            highlightNodeAndLinks(d, graph.links, false);
+            highlightNodeAndLinks(d, graph.links, false, regionColorMap);
         })
         .on("click", function(event, d) {
             filterHeatmap(d.name);
@@ -485,10 +485,10 @@ function renderSankeyDiagram(data) {
         .attr("stroke", "#999")
         .attr("stroke-width", d => Math.max(1, d.width))
         .on("mouseover", function(event, d) {
-            highlightNodeAndLinks(d.source, graph.links, true);
+            highlightNodeAndLinks(d.source, graph.links, true, regionColorMap);
         })
         .on("mouseout", function(event, d) {
-            highlightNodeAndLinks(d.source, graph.links, false);
+            highlightNodeAndLinks(d.source, graph.links, false, regionColorMap);
         })
         .on("click", function(event, d) {
             filterHeatmap(d.source.name);
@@ -501,8 +501,8 @@ function renderSankeyDiagram(data) {
         });
 }
 
-function highlightNodeAndLinks(node, links, highlight) {
-    const color = highlight ? "red" : "#999";
+function highlightNodeAndLinks(node, links, highlight, regionColorMap) {
+    const color = highlight ? "#000" : "#999";
     const strokeOpacity = highlight ? 1 : 0.5;
 
     d3.select(`#node-${node.index}`)
@@ -517,6 +517,7 @@ function highlightNodeAndLinks(node, links, highlight) {
                         if (d.target.name === "High") return "pink";
                         else if (d.target.name === "Medium") return "yellow";
                         else if (d.target.name === "Low") return "cyan";
+                        return regionColorMap[d.source.name];
                     }
                     return "#999";
                 })
@@ -525,6 +526,8 @@ function highlightNodeAndLinks(node, links, highlight) {
         }
     });
 }
+
+
 
 function wrapText(d) {
     const text = d3.select(this);
