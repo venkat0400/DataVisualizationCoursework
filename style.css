@@ -553,3 +553,64 @@ input[type=radio]:checked + .check + label {
     overflow: hidden;
 }
 
+/* Slider style */
+
+#slider-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    margin-top: 10px;
+}
+
+#slider-container label {
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+#topNCountries {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 50%; /* Adjust the width of the slider as needed */
+    height: 10px; /* Height of the track */
+    background: linear-gradient(to right, #3498db 0%, #3498db var(--slider-value, 0%), #ddd var(--slider-value, 0%), #ddd 100%);
+    border-radius: 5px; /* Rounded corners */
+    outline: none;
+    margin-bottom: 5px;
+}
+
+#topNCountries:hover {
+    opacity: 1;
+}
+
+#topNCountries::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: #0047ab; /* Darker blue color for the thumb */
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+}
+
+#topNCountries::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: #0047ab; /* Darker blue color for the thumb */
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+}
+
+output {
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+#topNCountriesValue {
+    font-weight: bold;
+    margin-left: 10px;
+}

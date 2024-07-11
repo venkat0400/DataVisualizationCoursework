@@ -28,7 +28,18 @@ async function initDashboard(_data, _dimensions, objArr) {
     document.getElementById("sankeyTarget").addEventListener("change", createChart3);
     document.getElementById("sankeyValue").addEventListener("change", createChart3);
 
-    // Event listener for Heatmap
+    // Event listener for the slider
+    const slider = document.getElementById("topNCountries");
+    const sliderValueDisplay = document.getElementById("topNCountriesValue");
+
+    slider.addEventListener("input", function() {
+        updateSliderValue(this.value);
+        updateSliderBackground(this);
+        createChart3();
+    });
+
+    // Call this function initially to set the correct background on page load
+updateSliderBackground(slider);
 
     // Populate Heatmap dropdowns
     populateHeatmapDropdowns(objArr);
@@ -326,6 +337,21 @@ function clearDashboard() {
 }
 
 // ------------------------------------ Sankey Implementation ----------------------------------- //
+
+// Function to update the slider value display
+function updateSliderValue(value) {
+    const sliderValueDisplay = document.getElementById("topNCountriesValue");
+    sliderValueDisplay.textContent = value;
+}
+
+// Function to update the slider background fill
+function updateSliderBackground(slider) {
+    const value = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+    slider.style.background = `linear-gradient(to right, #3498db 0%, #3498db ${value}%, #ddd ${value}%, #ddd 100%)`;
+}
+
+
+
 function populateSankeyDropdowns(dimensions) {
     console.log("Populating Sankey dropdowns with dimensions:", dimensions);
 
@@ -353,7 +379,8 @@ function populateSankeyDropdowns(dimensions) {
 
 // Function to construct Data Structure for Sankey
 function constructSankeyData(source, middle, target, value, data) {
-    const filteredData = filterTopCountriesByRegion(data, source, middle, value);
+    const topN = +document.getElementById('topNCountries').value; // Get the current value of the slider
+    const filteredData = filterTopCountriesByRegion(data, source, middle, value, topN);
 
     let nodes = [];
     let nodeMap = {};
@@ -402,7 +429,11 @@ function constructSankeyData(source, middle, target, value, data) {
     return {nodes: nodes, links: links};
 }
 
+// Function to render the Sankey diagram
 function renderSankeyDiagram(data) {
+    const topN = +document.getElementById('topNCountries').value; // Get the current value of the slider
+    const filteredData = filterTopCountriesByRegion(data, 'Region', 'Country', 'Value', topN);
+
     const container = d3.select("#sankey");
     const width = container.node().getBoundingClientRect().width;
     const height = 1500;
@@ -410,7 +441,7 @@ function renderSankeyDiagram(data) {
     const svg = container.html("").append("svg")
         .attr("width", width)
         .attr("height", height)
-        .call(d3.zoom().on("zoom", function (event) {
+        .call(d3.zoom().on("zoom", function(event) {
             svg.attr("transform", event.transform);
         }))
         .append("g");
@@ -481,23 +512,23 @@ function renderSankeyDiagram(data) {
         .attr("stroke", "#000")
         .attr("id", d => `node-${d.index}`)
         .style("cursor", "pointer")
-        .on("mouseover", function (event, d) {
+        .on("mouseover", function(event, d) {
             d3.select(this).attr("stroke", "#000").attr("stroke-width", 5);
             highlightNodeAndLinks(d, graph.links, true, regionColorMap);
             nodeTooltip.style("visibility", "visible")
                 .html(`<div class="tooltip-title">${d.layer === 0 ? "Region" : (d.layer === 1 ? "Country" : "Stringency Category")}: <strong>${d.name}</strong></div>
                        <div class="tooltip-value">Value: ${d.value}</div>`);
         })
-        .on("mousemove", function (event) {
+        .on("mousemove", function(event) {
             nodeTooltip.style("top", (event.pageY - 10) + "px")
                 .style("left", (event.pageX + 10) + "px");
         })
-        .on("mouseout", function (event, d) {
+        .on("mouseout", function(event, d) {
             d3.select(this).attr("stroke", "#999").attr("stroke-width", 1);
             highlightNodeAndLinks(d, graph.links, false, regionColorMap);
             nodeTooltip.style("visibility", "hidden");
         })
-        .on("click", function (event, d) {
+        .on("click", function(event, d) {
             filterHeatmap(d.name);
         });
 
@@ -530,21 +561,21 @@ function renderSankeyDiagram(data) {
         .attr("stroke", "#999")
         .attr("stroke-width", d => Math.max(1, d.width))
         .style("cursor", "pointer")
-        .on("mouseover", function (event, d) {
+        .on("mouseover", function(event, d) {
             highlightNodeAndLinks(d.source, graph.links, true, regionColorMap);
             linkTooltip.style("visibility", "visible")
                 .html(`<div class="tooltip-title">${d.source.name} → ${d.target.name}</div>
                        <div class="tooltip-value">Value: ${d.value}</div>`);
         })
-        .on("mousemove", function (event) {
+        .on("mousemove", function(event) {
             linkTooltip.style("top", (event.pageY - 10) + "px")
                 .style("left", (event.pageX + 10) + "px");
         })
-        .on("mouseout", function (event, d) {
+        .on("mouseout", function(event, d) {
             highlightNodeAndLinks(d.source, graph.links, false, regionColorMap);
             linkTooltip.style("visibility", "hidden");
         })
-        .on("click", function (event, d) {
+        .on("click", function(event, d) {
             filterHeatmap(d.source.name);
         });
 
@@ -601,8 +632,16 @@ function wrapText(d) {
 
 
 
-function filterTopCountriesByRegion(data, regionColumn, countryColumn, valueColumn, topN = 5) {
+function filterTopCountriesByRegion(data, regionColumn, countryColumn, valueColumn, topN) {
+
+    // Ensure data is an array and has the necessary columns
+    if (!Array.isArray(data) || data.length === 0) {
+        console.error("Invalid data format");
+        return [];
+    }
+
     const groupedData = d3.groups(data, d => d[regionColumn]);
+    console.log("Grouped Data:", groupedData);
 
     return groupedData.flatMap(([region, countries]) => {
         return countries

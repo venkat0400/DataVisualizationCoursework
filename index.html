@@ -173,6 +173,12 @@
                 <label for="sankeyValue">Value:</label>
                 <select name="sankeyValue" id="sankeyValue"></select>
             </div>
+            <!-- Slider for selecting the number of countries -->
+            <div id="slider-container">
+            <label for="topNCountries"><strong>Number of Countries:</strong></label>
+            <input type="range" id="topNCountries" min="1" max="8" value="5" oninput="updateSliderValue(this.value)">
+            <output id="topNCountriesValue" for="topNCountries">5</output>
+    </div>
         </fieldset>
     </form>
     <div id="sankey"></div>
