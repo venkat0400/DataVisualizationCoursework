@@ -207,11 +207,27 @@ function createChart1(){
 
 function createChart2(selectedCountry) {
     const margin = {top: 20, right: 30, bottom: 90, left: 90},
+        containerWidth = document.getElementById('chart2').clientWidth,
         width = 700 - margin.left - margin.right,
         height = 550 - margin.top - margin.bottom;
     let attribute = document.getElementById('bubbleAttribute').value;
-    const svg = d3.select("#chart2 svg g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Create an SVG or select existing SVG
+    const svgContainer = d3.select("#chart2").select("svg");
+    if (svgContainer.empty()) {
+        svgContainer.append("svg")
+            .attr("width", containerWidth)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${(containerWidth - width) / 2},${margin.top})`);
+    } else {
+        svgContainer.attr("width", containerWidth)
+            .attr("height", height + margin.top + margin.bottom)
+            .select("g")
+            .attr("transform", `translate(${(containerWidth - width) / 2},${margin.top})`);
+    }
+
+    const svg = svgContainer.select("g");
 
     function updateChart(attribute, selectedCountry) {
         d3.csv("covid19.csv").then(function(data) {
@@ -260,7 +276,6 @@ function createChart2(selectedCountry) {
                 .attr("x", d => x(d["Country"]))
                 .attr("width", x.bandwidth())
                 .attr("fill", d => d.Country === selectedCountry ? "orange" : "#69b3a2")
-                // No bar at the beginning thus:
                 .attr("height", d => height - y(0)) // always equal to 0
                 .attr("y", d => y(0))
                 .transition()
