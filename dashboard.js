@@ -127,7 +127,7 @@ function createChart1(){
             .style("opacity", .3);
 
         const tooltip = d3.select("body").append("div")
-            .attr("class", "tooltip")
+            .attr("class", "sankey-tooltip") // Use the same class as Sankey-tooltip
             .style("opacity", 0);
 
         svg.selectAll("myCircles")
@@ -135,11 +135,16 @@ function createChart1(){
             .join("circle")
             .attr("cx", d => projection([+d.Longitude, +d.Latitude])[0])
             .attr("cy", d => projection([+d.Longitude, +d.Latitude])[1])
-            .attr("r", d => size(+d[attribute]))
+            .attr("r", 0) // Start radius at 0 for animation
             .style("fill", d => color(d["WHORegion"]))
             .attr("stroke", d => (d[attribute] > 2000) ? "black" : "none")
             .attr("stroke-width", 1)
             .attr("fill-opacity", .4)
+            .transition() // Add transition for animation
+            .duration(1500) // Animation duration
+            .attr("r", d => size(+d[attribute]));
+
+        svg.selectAll("circle")
             .on("mouseover", function(event, d) {
                 tooltip.transition()
                     .duration(200)
@@ -200,6 +205,7 @@ function createChart1(){
             .attr('alignment-baseline', 'middle');
     });
 }
+
 
 function createChart2(selectedCountry) {
     const margin = {top: 20, right: 30, bottom: 90, left: 90},
@@ -404,13 +410,13 @@ function renderSankeyDiagram(data) {
     const svg = container.html("").append("svg")
         .attr("width", width)
         .attr("height", height)
-        .call(d3.zoom().on("zoom", function(event) {
+        .call(d3.zoom().on("zoom", function (event) {
             svg.attr("transform", event.transform);
         }))
         .append("g");
 
     const sankey = d3.sankey()
-        .nodeWidth(100)
+        .nodeWidth(200)
         .nodePadding(30)
         .extent([[1, 1], [width - 1, height - 6]]);
 
@@ -437,8 +443,13 @@ function renderSankeyDiagram(data) {
     // Map to store region colors for middle nodes
     const regionColorMap = {};
 
-    // Create a tooltip div
-    const tooltip = d3.select("body").append("div")
+    // Create a tooltip div for nodes
+    const nodeTooltip = d3.select("body").append("div")
+        .attr("class", "sankey-tooltip")
+        .style("visibility", "hidden");
+
+    // Create a tooltip div for links
+    const linkTooltip = d3.select("body").append("div")
         .attr("class", "sankey-tooltip")
         .style("visibility", "hidden");
 
@@ -470,23 +481,23 @@ function renderSankeyDiagram(data) {
         .attr("stroke", "#000")
         .attr("id", d => `node-${d.index}`)
         .style("cursor", "pointer")
-        .on("mouseover", function(event, d) {
+        .on("mouseover", function (event, d) {
             d3.select(this).attr("stroke", "#000").attr("stroke-width", 5);
             highlightNodeAndLinks(d, graph.links, true, regionColorMap);
-            tooltip.style("visibility", "visible")
+            nodeTooltip.style("visibility", "visible")
                 .html(`<div class="tooltip-title">${d.layer === 0 ? "Region" : (d.layer === 1 ? "Country" : "Stringency Category")}: <strong>${d.name}</strong></div>
                        <div class="tooltip-value">Value: ${d.value}</div>`);
         })
-        .on("mousemove", function(event) {
-            tooltip.style("top", (event.pageY - 10) + "px")
+        .on("mousemove", function (event) {
+            nodeTooltip.style("top", (event.pageY - 10) + "px")
                 .style("left", (event.pageX + 10) + "px");
         })
-        .on("mouseout", function(event, d) {
+        .on("mouseout", function (event, d) {
             d3.select(this).attr("stroke", "#999").attr("stroke-width", 1);
             highlightNodeAndLinks(d, graph.links, false, regionColorMap);
-            tooltip.style("visibility", "hidden");
+            nodeTooltip.style("visibility", "hidden");
         })
-        .on("click", function(event, d) {
+        .on("click", function (event, d) {
             filterHeatmap(d.name);
         });
 
@@ -500,7 +511,7 @@ function renderSankeyDiagram(data) {
         .attr("dy", "0.35em")
         .attr("text-anchor", "middle")
         .attr("alignment-baseline", "middle")
-        .style("font-size", "14px")
+        .style("font-size", "15px")
         .style("fill", "black")
         .style("user-select", "none")
         .style("pointer-events", "none")
@@ -519,47 +530,49 @@ function renderSankeyDiagram(data) {
         .attr("stroke", "#999")
         .attr("stroke-width", d => Math.max(1, d.width))
         .style("cursor", "pointer")
-        .on("mouseover", function(event, d) {
+        .on("mouseover", function (event, d) {
             highlightNodeAndLinks(d.source, graph.links, true, regionColorMap);
+            linkTooltip.style("visibility", "visible")
+                .html(`<div class="tooltip-title">${d.source.name} → ${d.target.name}</div>
+                       <div class="tooltip-value">Value: ${d.value}</div>`);
         })
-        .on("mouseout", function(event, d) {
+        .on("mousemove", function (event) {
+            linkTooltip.style("top", (event.pageY - 10) + "px")
+                .style("left", (event.pageX + 10) + "px");
+        })
+        .on("mouseout", function (event, d) {
             highlightNodeAndLinks(d.source, graph.links, false, regionColorMap);
+            linkTooltip.style("visibility", "hidden");
         })
-        .on("click", function(event, d) {
+        .on("click", function (event, d) {
             filterHeatmap(d.source.name);
-        })
-        .append("title")
-        .text(d => {
-            const sourceNode = graph.nodes[d.source.index];
-            const targetNode = graph.nodes[d.target.index];
-            return `${sourceNode.name} → ${targetNode.name}\nValue: ${d.value}`;
         });
-}
 
-function highlightNodeAndLinks(node, links, highlight, regionColorMap) {
-    const color = highlight ? "#000" : "#999";
-    const strokeOpacity = highlight ? 1 : 0.5;
+    function highlightNodeAndLinks(node, links, highlight, regionColorMap) {
+        const color = highlight ? "#000" : "#999";
+        const strokeOpacity = highlight ? 1 : 0.5;
 
-    d3.select(`#node-${node.index}`)
-        .attr("stroke", color)
-        .attr("stroke-width", 3);
+        d3.select(`#node-${node.index}`)
+            .attr("stroke", color)
+            .attr("stroke-width", 3);
 
-    links.forEach(link => {
-        if (link.source === node || link.target === node) {
-            d3.select(`#link-${link.index}`)
-                .attr("stroke", d => {
-                    if (highlight) {
-                        if (d.target.name === "High") return "pink";
-                        else if (d.target.name === "Medium") return "yellow";
-                        else if (d.target.name === "Low") return "cyan";
-                        else return regionColorMap[d.source.name];
-                    }
-                    return "#999";
-                })
-                .attr("stroke-opacity", strokeOpacity)
-                .attr("stroke-width", link.width);
-        }
-    });
+        links.forEach(link => {
+            if (link.source === node || link.target === node) {
+                d3.select(`#link-${link.index}`)
+                    .attr("stroke", d => {
+                        if (highlight) {
+                            if (d.target.name === "High") return "pink";
+                            else if (d.target.name === "Medium") return "yellow";
+                            else if (d.target.name === "Low") return "cyan";
+                            else return regionColorMap[d.source.name];
+                        }
+                        return "#999";
+                    })
+                    .attr("stroke-opacity", strokeOpacity)
+                    .attr("stroke-width", link.width);
+            }
+        });
+    }
 }
 
 function wrapText(d) {
@@ -961,7 +974,6 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
             .remove();
     }
 }
-
 
 function initializeHeatmap() {
     console.log('Initializing heatmap...');
