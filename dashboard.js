@@ -144,7 +144,7 @@ function createChart1() {
             .attr("cx", d => projection([+d.Longitude, +d.Latitude])[0])
             .attr("cy", d => projection([+d.Longitude, +d.Latitude])[1])
             .attr("r", 0) // Start radius at 0 for animation
-            .style("fill", d => color(d["WHO Region"]))
+            .style("fill", d => color(d["WHORegion"]))
             .attr("stroke", d => (d[attribute] > 2000) ? "black" : "none")
             .attr("stroke-width", 1)
             .attr("fill-opacity", .4)
