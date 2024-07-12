@@ -932,7 +932,23 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
                 break;
 
             case 'region-vs-cases':
-                xLabels = [...new Set(data.map(d => d.WHORegion))];
+                // Aggregate data by region
+                const regionData = Array.from(d3.rollup(
+                    data,
+                    v => {
+                        const result = {};
+                        caseTypes.forEach(ct => {
+                            result[ct] = d3.sum(v, d => d[ct]);
+                        });
+                        return result;
+                    },
+                    d => d.WHORegion
+                )).map(([WHORegion, values]) => ({WHORegion, ...values}));
+
+                // Log aggregated data for debugging
+                console.log("Aggregated Region Data:", regionData);
+
+                xLabels = regionData.map(d => d.WHORegion);
                 yLabels = caseTypes;
 
                 x = d3.scaleBand()
@@ -947,7 +963,7 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
                     .attr("transform", "rotate(-45)")
                     .style("text-anchor", "end")
                     .style("font-size", "13px")
-                    .style("font-family", "Lato, Arial, sans-serif")
+                    .style("font-family", "Lato, Arial, sans-serif");
 
                 y = d3.scaleBand()
                     .range([height, 0])
@@ -960,17 +976,20 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
                     .style("font-size", "13px")
                     .style("font-family", "Lato, Arial, sans-serif");
 
-                maxValue = d3.max(data, d => d3.max(caseTypes.map(ct => d[ct])));
-                minValue = d3.min(data, d => d3.min(caseTypes.map(ct => d[ct])));
+                maxValue = d3.max(regionData, d => d3.max(caseTypes.map(ct => d[ct])));
+                minValue = d3.min(regionData, d => d3.min(caseTypes.map(ct => d[ct])));
+
+                // Log min and max values for debugging
+                console.log("Min Value:", minValue);
+                console.log("Max Value:", maxValue);
 
                 colorScale = d3.scaleSequential()
                     .interpolator(d3.interpolateRdYlGn)
                     .domain([minValue, maxValue]);
 
-                const regionVsCasesData = data.flatMap(d => caseTypes.map(ct => ({
+                const regionVsCasesData = regionData.flatMap(d => caseTypes.map(ct => ({
                     WHORegion: d.WHORegion, CaseType: ct, Value: d[ct]
                 })));
-                console.log("Region vs Cases Data:", regionVsCasesData);
 
                 svg.selectAll()
                     .data(regionVsCasesData)
@@ -996,22 +1015,23 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
                     .transition()
                     .duration("1500")
                     .style("opacity", 1);
+
                 break;
         }
 
         // Add a legend for the heatmap
-        const legendWidth = 300;
+        const legendWidth = 400;
         const legendHeight = 30;
 
         const legendSvg = svg.append("g")
             .attr("transform", `translate(${width - legendWidth}, -50)`);
 
-        // After calculating minValue and maxValue, create the log scale:
+// Create the log scale
         const logScale = d3.scaleLog()
             .domain([Math.max(1, minValue), maxValue]) // Avoid log(0)
             .range([0, 1]);
 
-        // Create the color scale based on the selected scheme
+// Create the color scale based on the selected scheme
         let colorInterpolator;
         switch (colorScheme) {
             case 'coolwarm':
@@ -1026,15 +1046,14 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
 
         colorScale = d3.scaleSequential(colorInterpolator).domain([0, 1]);
 
-        // Use this function to get the color for a value
+// Use this function to get the color for a value
         const getColor = value => colorScale(logScale(Math.max(1, value)));
 
-        // Update the rect fill style:
+// Update the rect fill style:
         svg.selectAll("rect")
-            // [Other attributes remain the same]
             .style("fill", d => getColor(d.Value));
 
-        // Update the legend
+// Update the legend
         const legendScale = d3.scaleLog()
             .domain([Math.max(1, minValue), maxValue])
             .range([0, legendWidth]);
@@ -1062,6 +1081,7 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
             .style("font-size", "12px")
             .style("font-weight", "bold")
             .style("fill", "black");
+
     }
 }
 
