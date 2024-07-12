@@ -32,14 +32,14 @@ async function initDashboard(_data, _dimensions, objArr) {
     const slider = document.getElementById("topNCountries");
     const sliderValueDisplay = document.getElementById("topNCountriesValue");
 
-    slider.addEventListener("input", function() {
+    slider.addEventListener("input", function () {
         updateSliderValue(this.value);
         updateSliderBackground(this);
         createChart3();
     });
 
     // Call this function initially to set the correct background on page load
-updateSliderBackground(slider);
+    updateSliderBackground(slider);
 
     // Populate Heatmap dropdowns
     populateHeatmapDropdowns(objArr);
@@ -72,23 +72,22 @@ updateSliderBackground(slider);
         .attr("height", height)
         .append("g");
 
-    document.getElementById('bubbleAttribute').addEventListener('change', function(){
+    document.getElementById('bubbleAttribute').addEventListener('change', function () {
         createChart1();
         createChart2();
     });
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         createChart1();
         createChart2();
 
     });
 
     createChart3();
-    createChart4();
 
     clearDashboard();
 }
 
-function createChart1(){
+function createChart1() {
     const svgContainer = d3.select("#chart1");
     const containerWidth = svgContainer.node().getBoundingClientRect().width;
     const containerHeight = svgContainer.node().getBoundingClientRect().height;
@@ -98,7 +97,7 @@ function createChart1(){
     const svg = svgContainer.append("svg")
         .attr("width", containerWidth)
         .attr("height", containerHeight)
-        .call(d3.zoom().on("zoom", function(event) {
+        .call(d3.zoom().on("zoom", function (event) {
             svg.attr("transform", event.transform);
         }))
         .append("g");
@@ -110,9 +109,7 @@ function createChart1(){
 
     const attribute = document.getElementById('bubbleAttribute').value;
 
-    Promise.all([
-        d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"),
-        d3.csv("covid19.csv") // Update with your actual path
+    Promise.all([d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"), d3.csv("covid19.csv")
     ]).then(function (initialize) {
         let dataGeo = initialize[0];
         let data = initialize[1];
@@ -120,8 +117,8 @@ function createChart1(){
         svg.selectAll("*").remove();
 
         const color = d3.scaleOrdinal()
-            .domain(data.map(d => d["WHO Region"]))
-            .range(d3.schemeCategory10.slice(0,6));
+            .domain(data.map(d => d["WHORegion"]))
+            .range(d3.schemeCategory10.slice(0, 6));
 
         const valueExtent = d3.extent(data, d => +d[attribute]);
         const size = d3.scaleSqrt()
@@ -138,7 +135,7 @@ function createChart1(){
             .style("opacity", .3);
 
         const tooltip = d3.select("body").append("div")
-            .attr("class", "sankey-tooltip") // Use the same class as Sankey-tooltip
+            .attr("class", "sankey-tooltip")
             .style("opacity", 0);
 
         svg.selectAll("myCircles")
@@ -156,7 +153,7 @@ function createChart1(){
             .attr("r", d => size(+d[attribute]));
 
         svg.selectAll("circle")
-            .on("mouseover", function(event, d) {
+            .on("mouseover", function (event, d) {
                 tooltip.transition()
                     .duration(200)
                     .style("opacity", .9);
@@ -165,13 +162,13 @@ function createChart1(){
                     .style("top", (event.pageY - 28) + "px");
                 d3.select(this).attr("stroke", "black").attr("stroke-width", 2);
             })
-            .on("mouseout", function(d) {
+            .on("mouseout", function (d) {
                 tooltip.transition()
                     .duration(500)
                     .style("opacity", 0);
                 d3.select(this).attr("stroke", d => (d[attribute] > 2000) ? "black" : "none").attr("stroke-width", 1);
             })
-            .on("click", function(event, d) {
+            .on("click", function (event, d) {
                 createChart2(d.Country);
             });
 
@@ -220,8 +217,7 @@ function createChart1(){
 
 function createChart2(selectedCountry) {
     const margin = {top: 20, right: 30, bottom: 90, left: 90},
-        containerWidth = document.getElementById('chart2').clientWidth,
-        width = 700 - margin.left - margin.right,
+        containerWidth = document.getElementById('chart2').clientWidth, width = 700 - margin.left - margin.right,
         height = 550 - margin.top - margin.bottom;
     let attribute = document.getElementById('bubbleAttribute').value;
     let sortOrder = 'descending'; // Default sort order
@@ -244,7 +240,7 @@ function createChart2(selectedCountry) {
     const svg = svgContainer.select("g");
 
     function updateChart(attribute, selectedCountry, sortOrder) {
-        d3.csv("covid19.csv").then(function(data) {
+        d3.csv("covid19.csv").then(function (data) {
             data = data.sort((a, b) => sortOrder === 'descending' ? d3.descending(+a[attribute], +b[attribute]) : d3.ascending(+a[attribute], +b[attribute]));
             let selectedIndex = data.findIndex(d => d.Country === selectedCountry);
 
@@ -268,6 +264,7 @@ function createChart2(selectedCountry) {
                 .selectAll("text")
                 .attr("transform", "translate(-10,0)rotate(-45)")
                 .style("text-anchor", "end")
+                .style("font-size", "13px")
                 .style("font-weight", d => d === selectedCountry ? "bold" : "normal");
 
 
@@ -276,7 +273,8 @@ function createChart2(selectedCountry) {
                 .range([height, 0]);
 
             svg.append("g")
-                .call(d3.axisLeft(y));
+                .call(d3.axisLeft(y))
+                .style("font-size", "13px");
 
 
             svg.selectAll("mybar")
@@ -312,7 +310,7 @@ function createChart2(selectedCountry) {
     updateChart(attribute, selectedCountry, sortOrder);
 }
 
-function createChart3(){
+function createChart3() {
     const source = document.getElementById("sankeySource").value;
     const middle = document.getElementById("sankeyMiddle").value;
     const target = document.getElementById("sankeyTarget").value;
@@ -321,10 +319,6 @@ function createChart3(){
     const sankeyData = constructSankeyData(source, middle, target, value, objArr);
 
     renderSankeyDiagram(sankeyData);
-}
-
-function createChart4(){
-
 }
 
 // clear files if changes (dataset) occur
@@ -350,8 +344,6 @@ function updateSliderBackground(slider) {
     slider.style.background = `linear-gradient(to right, #3498db 0%, #3498db ${value}%, #ddd ${value}%, #ddd 100%)`;
 }
 
-
-
 function populateSankeyDropdowns(dimensions) {
     console.log("Populating Sankey dropdowns with dimensions:", dimensions);
 
@@ -366,14 +358,21 @@ function populateSankeyDropdowns(dimensions) {
     targetSelect.innerHTML = '';
     valueSelect.innerHTML = '';
 
+    // List of known categorical fields
+    const categoricalFields = ["WHORegion", "Country", "Stringency Category"];
+
     dimensions.forEach(attribute => {
         console.log("Adding attribute to dropdown:", attribute);
 
-        const option = new Option(attribute, attribute);
-        sourceSelect.add(option.cloneNode(true));
-        middleSelect.add(option.cloneNode(true));
-        targetSelect.add(option.cloneNode(true));
-        valueSelect.add(option.cloneNode(true));
+        if (categoricalFields.includes(attribute)) {
+            const option = new Option(attribute, attribute);
+            sourceSelect.add(option.cloneNode(true));
+            middleSelect.add(option.cloneNode(true));
+            targetSelect.add(option.cloneNode(true));
+        } else {
+            const option = new Option(attribute, attribute);
+            valueSelect.add(option);
+        }
     });
 }
 
@@ -388,7 +387,7 @@ function constructSankeyData(source, middle, target, value, data) {
     function addNode(name) {
         if (!nodeMap.hasOwnProperty(name)) {
             nodeMap[name] = nodes.length;
-            nodes.push({ name: name });
+            nodes.push({name: name});
         }
         return nodeMap[name];
     }
@@ -414,13 +413,13 @@ function constructSankeyData(source, middle, target, value, data) {
         if (linksMap[sourceMiddleKey]) {
             linksMap[sourceMiddleKey].value += +d[value];
         } else {
-            linksMap[sourceMiddleKey] = { source: sourceIndex, target: middleIndex, value: +d[value] };
+            linksMap[sourceMiddleKey] = {source: sourceIndex, target: middleIndex, value: +d[value]};
         }
 
         if (linksMap[middleTargetKey]) {
             linksMap[middleTargetKey].value += +d[value];
         } else {
-            linksMap[middleTargetKey] = { source: middleIndex, target: targetIndex, value: +d[value] };
+            linksMap[middleTargetKey] = {source: middleIndex, target: targetIndex, value: +d[value]};
         }
     });
 
@@ -441,7 +440,7 @@ function renderSankeyDiagram(data) {
     const svg = container.html("").append("svg")
         .attr("width", width)
         .attr("height", height)
-        .call(d3.zoom().on("zoom", function(event) {
+        .call(d3.zoom().on("zoom", function (event) {
             svg.attr("transform", event.transform);
         }))
         .append("g");
@@ -512,23 +511,23 @@ function renderSankeyDiagram(data) {
         .attr("stroke", "#000")
         .attr("id", d => `node-${d.index}`)
         .style("cursor", "pointer")
-        .on("mouseover", function(event, d) {
+        .on("mouseover", function (event, d) {
             d3.select(this).attr("stroke", "#000").attr("stroke-width", 5);
             highlightNodeAndLinks(d, graph.links, true, regionColorMap);
             nodeTooltip.style("visibility", "visible")
                 .html(`<div class="tooltip-title">${d.layer === 0 ? "Region" : (d.layer === 1 ? "Country" : "Stringency Category")}: <strong>${d.name}</strong></div>
                        <div class="tooltip-value">Value: ${d.value}</div>`);
         })
-        .on("mousemove", function(event) {
+        .on("mousemove", function (event) {
             nodeTooltip.style("top", (event.pageY - 10) + "px")
                 .style("left", (event.pageX + 10) + "px");
         })
-        .on("mouseout", function(event, d) {
+        .on("mouseout", function (event, d) {
             d3.select(this).attr("stroke", "#999").attr("stroke-width", 1);
             highlightNodeAndLinks(d, graph.links, false, regionColorMap);
             nodeTooltip.style("visibility", "hidden");
         })
-        .on("click", function(event, d) {
+        .on("click", function (event, d) {
             filterHeatmap(d.name);
         });
 
@@ -561,21 +560,21 @@ function renderSankeyDiagram(data) {
         .attr("stroke", "#999")
         .attr("stroke-width", d => Math.max(1, d.width))
         .style("cursor", "pointer")
-        .on("mouseover", function(event, d) {
+        .on("mouseover", function (event, d) {
             highlightNodeAndLinks(d.source, graph.links, true, regionColorMap);
             linkTooltip.style("visibility", "visible")
                 .html(`<div class="tooltip-title">${d.source.name} → ${d.target.name}</div>
                        <div class="tooltip-value">Value: ${d.value}</div>`);
         })
-        .on("mousemove", function(event) {
+        .on("mousemove", function (event) {
             linkTooltip.style("top", (event.pageY - 10) + "px")
                 .style("left", (event.pageX + 10) + "px");
         })
-        .on("mouseout", function(event, d) {
+        .on("mouseout", function (event, d) {
             highlightNodeAndLinks(d.source, graph.links, false, regionColorMap);
             linkTooltip.style("visibility", "hidden");
         })
-        .on("click", function(event, d) {
+        .on("click", function (event, d) {
             filterHeatmap(d.source.name);
         });
 
@@ -592,10 +591,7 @@ function renderSankeyDiagram(data) {
                 d3.select(`#link-${link.index}`)
                     .attr("stroke", d => {
                         if (highlight) {
-                            if (d.target.name === "High") return "pink";
-                            else if (d.target.name === "Medium") return "yellow";
-                            else if (d.target.name === "Low") return "cyan";
-                            else return regionColorMap[d.source.name];
+                            if (d.target.name === "High") return "pink"; else if (d.target.name === "Medium") return "yellow"; else if (d.target.name === "Low") return "cyan"; else return regionColorMap[d.source.name];
                         }
                         return "#999";
                     })
@@ -606,16 +602,12 @@ function renderSankeyDiagram(data) {
     }
 }
 
+// Function to wrap long Names of Regions and Countries
 function wrapText(d) {
     const text = d3.select(this);
     const width = d.x1 - d.x0;
     const words = d.name.split(/\s+/).reverse();
-    let word,
-        line = [],
-        lineNumber = 0,
-        lineHeight = 1.1,
-        y = text.attr("y"),
-        dy = parseFloat(text.attr("dy")),
+    let word, line = [], lineNumber = 0, lineHeight = 1.1, y = text.attr("y"), dy = parseFloat(text.attr("dy")),
         tspan = text.text(null).append("tspan").attr("x", text.attr("x")).attr("y", y).attr("dy", dy + "em");
 
     while (word = words.pop()) {
@@ -629,8 +621,6 @@ function wrapText(d) {
         }
     }
 }
-
-
 
 function filterTopCountriesByRegion(data, regionColumn, countryColumn, valueColumn, topN) {
 
@@ -650,9 +640,8 @@ function filterTopCountriesByRegion(data, regionColumn, countryColumn, valueColu
     });
 }
 
-
-
 // ------------------------------------ End of Sankey Implementation ------------------------------ //
+
 
 // ------------------------------------ Heat Map Implementation ---------------------------------- //
 // Function to populate dropdowns for region and country
@@ -697,13 +686,14 @@ function populateHeatmapDropdowns(data) {
 
     console.log('Dropdowns populated.');
 }
+
 // Adjusted coolwarm color scale
 const coolwarm = d3.scaleSequential(d3.interpolateCool).domain([-1, 1]);
 
-// Function to compute the correlation matrix
+// Function to compute the correlation matrix using Pearson correlation coefficient formula
 function computeCorrelationMatrix(data, variables) {
     const n = variables.length;
-    const matrix = Array.from({ length: n }, () => Array(n).fill(0));
+    const matrix = Array.from({length: n}, () => Array(n).fill(0));
 
     for (let i = 0; i < n; i++) {
         for (let j = 0; j < n; j++) {
@@ -717,27 +707,32 @@ function computeCorrelationMatrix(data, variables) {
 // Helper function to compute the correlation between two arrays
 function correlation(x, y) {
     const n = x.length;
-    const meanX = d3.mean(x);
-    const meanY = d3.mean(y);
-    const covXY = d3.sum(x.map((d, i) => (d - meanX) * (y[i] - meanY))) / n;
-    const stdDevX = Math.sqrt(d3.sum(x.map(d => (d - meanX) ** 2)) / n);
-    const stdDevY = Math.sqrt(d3.sum(y.map(d => (d - meanY) ** 2)) / n);
-    return covXY / (stdDevX * stdDevY);
+    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+
+    for (let i = 0; i < n; i++) {
+        sumX += +x[i];
+        sumY += +y[i];
+        sumXY += +x[i] * +y[i];
+        sumX2 += +x[i] * +x[i];
+        sumY2 += +y[i] * +y[i];
+    }
+
+    const numerator = n * sumXY - sumX * sumY;
+    const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+
+    return denominator === 0 ? 0 : numerator / denominator;
 }
 
 // Function to render heatmap based on selected type
 function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
-    console.log("Data passed to renderHeatmap:", data);
-    console.log("Heatmap Type:", heatmapType);
-    console.log("Case Types:", caseTypes);
-    console.log("Color Scheme:", colorScheme);
+
 
     if (data.length === 0) {
         console.error("Filtered data is empty.");
         return;
     }
 
-    const margin = { top: 50, right: 200, bottom: 150, left: 100 };
+    const margin = {top: 50, right: 200, bottom: 150, left: 100};
     const width = 800 - margin.left - margin.right;
     const height = 800 - margin.top - margin.bottom;
 
@@ -778,8 +773,8 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
             .selectAll("text")
             .attr("transform", "rotate(-45)")
             .style("text-anchor", "end")
-            .style("font-size", "14px") // Increase the font size of x-axis labels
-            .style("font-family", "Arial, sans-serif"); // Change the font family of x-axis labels;
+            .style("font-size", "13px")
+            .style("font-family", "Lato, Arial, sans-serif");
 
         const y = d3.scaleBand()
             .range([height, 0])
@@ -789,23 +784,23 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
         svg.append("g")
             .call(d3.axisLeft(y))
             .selectAll("text")
-            .style("font-size", "14px") // Increase the font size of y-axis labels
-            .style("font-family", "Arial, sans-serif"); // Change the font family of y-axis labels
+            .style("font-size", "13px")
+            .style("font-family", "Lato, Arial, sans-serif");
 
         let colorScale;
         switch (colorScheme) {
             case 'coolwarm':
-                colorScale = d3.scaleSequential(d3.interpolateCool);
+                colorScale = d3.scaleSequential(d3.interpolateCool).domain([-1, 1]);
                 break;
             case 'YlGnBu':
-                colorScale = d3.scaleSequential(d3.interpolateYlGnBu);
+                colorScale = d3.scaleSequential(d3.interpolateYlGnBu).domain([0, 1]);
                 break;
             default:
-                colorScale = d3.scaleSequential(d3.interpolateRdYlGn);
+                colorScale = d3.scaleSequential(d3.interpolateRdYlGn).domain([-1, 1]);
         }
         colorScale.domain([-1, 1]);
 
-        const flattenedData = correlationMatrix.flatMap((row, i) => row.map((value, j) => ({ value, i, j })));
+        const flattenedData = correlationMatrix.flatMap((row, i) => row.map((value, j) => ({value, i, j})));
         console.log("Flattened Data for Rectangles:", flattenedData);
 
         svg.selectAll()
@@ -827,13 +822,17 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
             .on("mouseout", () => {
                 const tooltip = document.getElementById('tooltip');
                 tooltip.style.display = 'none';
-            });
+            })
+            .style("opacity", 0)
+            .transition()
+            .duration("1500")
+            .style("opacity", 1);
 
         const legendWidth = 200;
         const legendHeight = 20;
 
         const legendSvg = svg.append("g")
-            .attr("transform", `translate(${width - legendWidth}, -30)`);
+            .attr("transform", `translate(${width - legendWidth}, -50)`);
 
         const legendScale = d3.scaleLinear()
             .domain([-1, 1])
@@ -850,10 +849,16 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
             .attr("y", 0)
             .attr("width", 1)
             .attr("height", legendHeight)
-            .style("fill", d => colorScale(d / legendWidth * 2 - 1));
+            .style("fill", d => colorScale(d / legendWidth * 2 - 1))
+            .style("opacity", 0)
+            .transition()
+            .duration(1500)
+            .style("opacity", 1);
 
         legendSvg.append("g")
             .call(legendAxis)
+            .style("font-size", "13px")
+            .style("font-family", "Lato, Arial, sans-serif")
             .select(".domain")
             .remove();
     } else {
@@ -875,8 +880,8 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
                     .selectAll("text")
                     .attr("transform", "rotate(-45)")
                     .style("text-anchor", "end")
-                    .style("font-size", "14px") // Increase the font size of x-axis labels
-                    .style("font-family", "Arial, sans-serif"); // Change the font family of x-axis labels;
+                    .style("font-size", "13px")
+                    .style("font-family", "Lato, Arial, sans-serif");
 
                 y = d3.scaleBand()
                     .range([height, 0])
@@ -886,8 +891,8 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
                 svg.append("g")
                     .call(d3.axisLeft(y))
                     .selectAll("text")
-                    .style("font-size", "14px") // Increase the font size of y-axis labels
-                    .style("font-family", "Arial, sans-serif"); // Change the font family of y-axis labels
+                    .style("font-size", "13px")
+                    .style("font-family", "Lato, Arial, sans-serif");
 
                 maxValue = d3.max(data, d => d3.max(caseTypes.map(ct => d[ct])));
                 minValue = d3.min(data, d => d3.min(caseTypes.map(ct => d[ct])));
@@ -896,7 +901,9 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
                     .interpolator(d3.interpolateRdYlGn)
                     .domain([minValue, maxValue]);
 
-                const countryVsCasesData = data.flatMap(d => caseTypes.map(ct => ({ Country: d.Country, CaseType: ct, Value: d[ct] })));
+                const countryVsCasesData = data.flatMap(d => caseTypes.map(ct => ({
+                    Country: d.Country, CaseType: ct, Value: d[ct]
+                })));
                 console.log("Country vs Cases Data:", countryVsCasesData);
 
                 svg.selectAll()
@@ -907,7 +914,6 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
                     .attr("y", d => y(d.CaseType))
                     .attr("width", x.bandwidth())
                     .attr("height", y.bandwidth())
-                    .style("fill", d => colorScale(d.Value))
                     .on("mouseover", (event, d) => {
                         const tooltip = document.getElementById('tooltip');
                         tooltip.style.display = 'block';
@@ -918,7 +924,11 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
                     .on("mouseout", () => {
                         const tooltip = document.getElementById('tooltip');
                         tooltip.style.display = 'none';
-                    });
+                    })
+                    .style("opacity", 0)
+                    .transition()
+                    .duration("1500")
+                    .style("opacity", 1);
                 break;
 
             case 'region-vs-cases':
@@ -936,8 +946,8 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
                     .selectAll("text")
                     .attr("transform", "rotate(-45)")
                     .style("text-anchor", "end")
-                    .style("font-size", "14px") // Increase the font size of x-axis labels
-                    .style("font-family", "Arial, sans-serif"); // Change the font family of x-axis labels;
+                    .style("font-size", "13px")
+                    .style("font-family", "Lato, Arial, sans-serif")
 
                 y = d3.scaleBand()
                     .range([height, 0])
@@ -947,8 +957,8 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
                 svg.append("g")
                     .call(d3.axisLeft(y))
                     .selectAll("text")
-                    .style("font-size", "14px") // Increase the font size of y-axis labels
-                    .style("font-family", "Arial, sans-serif"); // Change the font family of y-axis labels
+                    .style("font-size", "13px")
+                    .style("font-family", "Lato, Arial, sans-serif");
 
                 maxValue = d3.max(data, d => d3.max(caseTypes.map(ct => d[ct])));
                 minValue = d3.min(data, d => d3.min(caseTypes.map(ct => d[ct])));
@@ -957,7 +967,9 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
                     .interpolator(d3.interpolateRdYlGn)
                     .domain([minValue, maxValue]);
 
-                const regionVsCasesData = data.flatMap(d => caseTypes.map(ct => ({ WHORegion: d.WHORegion, CaseType: ct, Value: d[ct] })));
+                const regionVsCasesData = data.flatMap(d => caseTypes.map(ct => ({
+                    WHORegion: d.WHORegion, CaseType: ct, Value: d[ct]
+                })));
                 console.log("Region vs Cases Data:", regionVsCasesData);
 
                 svg.selectAll()
@@ -979,23 +991,57 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
                     .on("mouseout", () => {
                         const tooltip = document.getElementById('tooltip');
                         tooltip.style.display = 'none';
-                    });
+                    })
+                    .style("opacity", 0)
+                    .transition()
+                    .duration("1500")
+                    .style("opacity", 1);
                 break;
         }
 
         // Add a legend for the heatmap
-        const legendWidth = 200;
-        const legendHeight = 20;
+        const legendWidth = 300;
+        const legendHeight = 30;
 
         const legendSvg = svg.append("g")
-            .attr("transform", `translate(${width - legendWidth}, -30)`);
+            .attr("transform", `translate(${width - legendWidth}, -50)`);
 
-        const legendScale = d3.scaleLinear()
-            .domain([minValue, maxValue])
+        // After calculating minValue and maxValue, create the log scale:
+        const logScale = d3.scaleLog()
+            .domain([Math.max(1, minValue), maxValue]) // Avoid log(0)
+            .range([0, 1]);
+
+        // Create the color scale based on the selected scheme
+        let colorInterpolator;
+        switch (colorScheme) {
+            case 'coolwarm':
+                colorInterpolator = d3.interpolateCool;
+                break;
+            case 'YlGnBu':
+                colorInterpolator = d3.interpolateYlGnBu;
+                break;
+            default:
+                colorInterpolator = d3.interpolateRdYlGn;
+        }
+
+        colorScale = d3.scaleSequential(colorInterpolator).domain([0, 1]);
+
+        // Use this function to get the color for a value
+        const getColor = value => colorScale(logScale(Math.max(1, value)));
+
+        // Update the rect fill style:
+        svg.selectAll("rect")
+            // [Other attributes remain the same]
+            .style("fill", d => getColor(d.Value));
+
+        // Update the legend
+        const legendScale = d3.scaleLog()
+            .domain([Math.max(1, minValue), maxValue])
             .range([0, legendWidth]);
 
         const legendAxis = d3.axisBottom(legendScale)
             .ticks(5)
+            .tickFormat(d3.format(".0s"))
             .tickSize(legendHeight);
 
         legendSvg.selectAll("rect")
@@ -1005,12 +1051,17 @@ function renderHeatmap(data, heatmapType, caseTypes, colorScheme) {
             .attr("y", 0)
             .attr("width", 1)
             .attr("height", legendHeight)
-            .style("fill", d => colorScale(d / legendWidth * (maxValue - minValue) + minValue));
+            .style("fill", d => getColor(legendScale.invert(d)));
 
         legendSvg.append("g")
             .call(legendAxis)
             .select(".domain")
             .remove();
+
+        legendSvg.selectAll("text")
+            .style("font-size", "12px")
+            .style("font-weight", "bold")
+            .style("fill", "black");
     }
 }
 
@@ -1023,12 +1074,6 @@ function initializeHeatmap() {
         const selectedCountries = Array.from(document.getElementById("country").selectedOptions).map(option => option.value);
         const selectedCaseTypes = Array.from(document.getElementById("case-type").selectedOptions).map(option => option.value);
         const selectedColorScheme = document.getElementById("color-scheme").value;
-
-        console.log("Selected Heatmap Type: ", selectedHeatmapType);
-        console.log("Selected Regions: ", selectedRegions);
-        console.log("Selected Countries: ", selectedCountries);
-        console.log("Selected Case Types: ", selectedCaseTypes);
-        console.log("Selected Color Scheme: ", selectedColorScheme);
 
         let filteredData = objArr;
         console.log("Initial data length:", filteredData.length);

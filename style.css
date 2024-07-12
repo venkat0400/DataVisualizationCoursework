@@ -185,7 +185,7 @@ fieldset {
 .dot {
     cursor: pointer;
     opacity: 0.6;
-    filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
+    filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5));
 }
 
 .dot:hover {
@@ -295,25 +295,7 @@ div.tooltip {
     background-color: #2980b9;
 }
 
-/* Styling for the container */
-#heatmap-container {
-    display: flex;
-    justify-content: center; /* Centers the chart horizontally */
-    align-items: flex-start; /* Aligns items to the top */
-    margin-top: 10px; /* Adds some margin to the top for better spacing */
-    padding: 20px; /* Adds padding for better spacing */
-}
 
-#heatmap {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 600px;
-    padding: 10px;
-    margin: auto;
-}
-
-/* Styling for the controls */
 #heatmap-controls {
     flex: 0 0 500px;
     padding: 20px;
@@ -413,6 +395,24 @@ input[type=radio]:checked + .check + label {
     border-color: #007bff;
 }
 
+/* Styling for the container */
+#heatmap-container {
+    display: flex;
+    justify-content: center; /* Centers the chart horizontally */
+    align-items: flex-start; /* Aligns items to the top */
+    margin-top: 10px; /* Adds some margin to the top for better spacing */
+    padding: 20px; /* Adds padding for better spacing */
+}
+
+#heatmap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 600px;
+    padding: 10px;
+    margin: auto;
+}
+
 #tooltip {
     position: absolute;
     background-color: rgba(0, 0, 0, 0.8);
@@ -431,72 +431,71 @@ input[type=radio]:checked + .check + label {
 
 /* Button styling */
 .custom-btn {
-  width: 130px;
-  height: 40px;
-  color: #fff;
-  border-radius: 5px;
-  padding: 10px 25px;
-  font-family: 'Lato', sans-serif;
-  font-size: 14px;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  display: inline-block;
-   box-shadow:inset 2px 2px 2px 0px rgba(255,255,255,.5),
-   7px 7px 20px 0px rgba(0,0,0,.1),
-   4px 4px 5px 0px rgba(0,0,0,.1);
-  outline: none;
+    width: 130px;
+    height: 40px;
+    color: #fff;
+    border-radius: 5px;
+    padding: 10px 25px;
+    font-family: 'Lato', sans-serif;
+    font-size: 14px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    display: inline-block;
+    box-shadow: inset 2px 2px 2px 0px rgba(255, 255, 255, .5),
+    7px 7px 20px 0px rgba(0, 0, 0, .1),
+    4px 4px 5px 0px rgba(0, 0, 0, .1);
+    outline: none;
 }
 
 .btn {
-  width: 130px;
-  height: 40px;
-  line-height: 42px;
-  padding: 0;
-  margin: 10px;
-  border: none;
-  background: rgb(0,123,255);
-  background: linear-gradient(0deg, rgba(0,123,255,1) 0%, rgba(0,150,255,1) 100%);
-  color: #fff;
-  font-weight: 800;
-  position: relative;
-  display: inline-block;
+    width: 130px;
+    height: 40px;
+    line-height: 42px;
+    padding: 0;
+    margin: 10px 10px 50px;
+    border: none;
+    background: rgb(0, 123, 255);
+    background: linear-gradient(0deg, rgba(0, 123, 255, 1) 0%, rgba(0, 150, 255, 1) 100%);
+    color: #fff;
+    font-weight: 800;
+    position: relative;
+    display: inline-block;
 }
 
 .btn:hover {
-  color: #007bff;
-  background: transparent;
-  box-shadow: none;
+    color: #007bff;
+    background: transparent;
+    box-shadow: none;
 }
 
 .btn:before,
 .btn:after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  height: 2px;
-  width: 0;
-  background: #007bff;
-  box-shadow:
-    -1px -1px 5px 0px #fff,
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 2px;
+    width: 0;
+    background: #007bff;
+    box-shadow: -1px -1px 5px 0px #fff,
     7px 7px 20px 0px #0003,
     4px 4px 5px 0px #0002;
-  transition: 400ms ease all;
+    transition: 400ms ease all;
 }
 
 .btn:after {
-  right: inherit;
-  top: inherit;
-  left: 0;
-  bottom: 0;
+    right: inherit;
+    top: inherit;
+    left: 0;
+    bottom: 0;
 }
 
 .btn:hover:before,
 .btn:hover:after {
-  width: 100%;
-  transition: 800ms ease all;
+    width: 100%;
+    transition: 800ms ease all;
 }
 
 .sankey-controls {
@@ -536,8 +535,8 @@ input[type=radio]:checked + .check + label {
 
 /* Change the hover and selected state of options */
 .dropdown-container select option:hover {
-    background-color: #e0f0ff; /* Lighter blue for hover */
-    color: black; /* Keep text color black */
+    background-color: #e0f0ff;
+    color: black;
 }
 
 /* Styling the select element when focused */
@@ -571,8 +570,8 @@ input[type=radio]:checked + .check + label {
 #topNCountries {
     -webkit-appearance: none;
     appearance: none;
-    width: 50%; /* Adjust the width of the slider as needed */
-    height: 10px; /* Height of the track */
+    width: 50%;
+    height: 10px;
     background: linear-gradient(to right, #3498db 0%, #3498db var(--slider-value, 0%), #ddd var(--slider-value, 0%), #ddd 100%);
     border-radius: 5px; /* Rounded corners */
     outline: none;
@@ -589,7 +588,7 @@ input[type=radio]:checked + .check + label {
     width: 25px;
     height: 25px;
     border-radius: 50%;
-    background: #0047ab; /* Darker blue color for the thumb */
+    background: #0047ab;
     cursor: pointer;
     position: relative;
     z-index: 2;
@@ -599,7 +598,7 @@ input[type=radio]:checked + .check + label {
     width: 25px;
     height: 25px;
     border-radius: 50%;
-    background: #0047ab; /* Darker blue color for the thumb */
+    background: #0047ab;
     cursor: pointer;
     position: relative;
     z-index: 2;
