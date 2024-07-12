@@ -81,9 +81,7 @@ async function initDashboard(_data, _dimensions, objArr) {
         createChart2();
 
     });
-
     createChart3();
-
     clearDashboard();
 }
 
